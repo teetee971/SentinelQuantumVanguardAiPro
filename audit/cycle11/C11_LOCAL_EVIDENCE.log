@@ -1,0 +1,500 @@
+SentinelQuantumVanguardAiPro · preuve locale C11 · 18 novembre 2026
+Base Git : b717802b171c6324ce7c8559e92d7c36cc2fd04a
+Build signé debug : ea5f0a7d019b1113dd25810a6f325db789f38f39
+L’exécution Android sur Galaxy S24+ reste BLOCKED. Les résultats des simulations sont distincts.
+Gradle 9.8.0, Kotlin 2.4.20, JDK 17, SDK 37.0, Build-Tools 36.0.0.
+
+Gradle JVM :
+gradle --no-daemon --max-workers=2 :app:testDebugUnitTest --rerun :wear-app:testDebugUnitTest --rerun :wearable-contract:test --rerun :wearable-security:test --rerun
+Gradle APK debug isolés :
+gradle --no-daemon --max-workers=2 -I ../audit/cycle11/validation/init.gradle :app:assembleDebug :app:assembleDebugAndroidTest
+
+Les espaces de fin de ligne des sorties copiées sont supprimés.
+
+===== Inventaire Git et état des environnements =====
+# branch.oid b717802b171c6324ce7c8559e92d7c36cc2fd04a
+# branch.head fix/sentinel-ai-revocation-barrier-20261118
+# branch.upstream origin/fix/sentinel-ai-revocation-barrier-20261118
+# branch.ab +0 -0
+worktree /workspace/work/sentinel-reference
+HEAD b717802b171c6324ce7c8559e92d7c36cc2fd04a
+branch refs/heads/fix/sentinel-ai-revocation-barrier-20261118
+
+refs/audit/c11/c10-delivery 0bfb6c26f7f9b5086a448949f406d17e0466f9a7
+refs/audit/c11/c10-transfer a0c82be42314f69a77429f8f731f9338dbd55f37
+refs/audit/c11/c9-transfer 8c171aa118e8d0dcb0d3418337d5bcf7113995d5
+refs/audit/c11/main 935344423b2af2a4a57c58123f2c5c178b46ec03
+refs/heads/fix/sentinel-ai-revocation-barrier-20261118 b717802b171c6324ce7c8559e92d7c36cc2fd04a
+refs/remotes/origin/fix/sentinel-ai-bounded-pairing-20261117 0bfb6c26f7f9b5086a448949f406d17e0466f9a7
+refs/remotes/origin/fix/sentinel-ai-revocation-barrier-20261118 b717802b171c6324ce7c8559e92d7c36cc2fd04a
+refs/remotes/origin/main 935344423b2af2a4a57c58123f2c5c178b46ec03
+refs/remotes/origin/transfer/sentinel-cycle10-validation-20261117 a0c82be42314f69a77429f8f731f9338dbd55f37
+refs/remotes/origin/transfer/sentinel-cycle9-validation-artifacts-20261117 8c171aa118e8d0dcb0d3418337d5bcf7113995d5
+b717802b171c6324ce7c8559e92d7c36cc2fd04a Record Sentinel IA P0 validation and S24+ qualification procedure [skip ci]
+5a6678f5df1dea4c26ee9c1f675cb0e9b225e56e Keep process revocation acknowledgement available across activity stops [skip ci]
+4ac285cf2587222305bc7449c9cbf6e14c32d66f Close Sentinel IA process revocation before draining active effects [skip ci]
+cc0ba093fd98a74771869a8bdedc632ffb929fc4 Preserve supplied Sentinel IA revocation barrier patch [skip ci]
+0bfb6c26f7f9b5086a448949f406d17e0466f9a7 docs: retain bounded output pairing evidence and S24 validation limits [skip ci]
+
+Stashes
+
+Validation clone and hosts
+local validation copy absent
+proot unavailable
+termux-info unavailable
+codemagic unavailable
+
+ADB
+List of devices attached
+
+===== Régression par reprise de l’ancienne décision PID et boot — FAIL attendu =====
+JUnit version 4.13.2
+.E...E.
+Time: 0.036
+There were 2 failures:
+1) processAndDeviceProofAreSeparate(com.sentinel.quantum.ai.SentinelAiRestartIdentityTest)
+java.lang.AssertionError
+	at org.junit.Assert.fail(Assert.java:87)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at org.junit.Assert.assertFalse(Assert.java:65)
+	at org.junit.Assert.assertFalse(Assert.java:75)
+	at com.sentinel.quantum.ai.SentinelAiRestartIdentityTest.processAndDeviceProofAreSeparate(SentinelAiRestartIdentityTest.kt:27)
+2) reusedPidProvesRestartOnlyWithDifferentKernelStartTimeOnSameBoot(com.sentinel.quantum.ai.SentinelAiRestartIdentityTest)
+java.lang.AssertionError
+	at org.junit.Assert.fail(Assert.java:87)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at org.junit.Assert.assertTrue(Assert.java:53)
+	at com.sentinel.quantum.ai.SentinelAiRestartIdentityTest.reusedPidProvesRestartOnlyWithDifferentKernelStartTimeOnSameBoot(SentinelAiRestartIdentityTest.kt:17)
+
+FAILURES!!!
+Tests run: 5,  Failures: 2
+
+===== Tests de décision et d’authentification du nouveau protocole — PASS =====
+JUnit version 4.13.2
+......
+Time: 0.105
+
+OK (6 tests)
+
+===== Gradle JVM, quatre modules — PASS =====
+cc877a290c6af938235fbcdc8397636586fb0538
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :wearable-security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :wearable-contract:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :wearable-security:compileKotlin UP-TO-DATE
+> Task :wearable-contract:compileKotlin UP-TO-DATE
+> Task :wearable-security:compileJava NO-SOURCE
+> Task :wearable-security:processResources NO-SOURCE
+> Task :wearable-security:classes UP-TO-DATE
+> Task :wearable-contract:compileJava NO-SOURCE
+> Task :wearable-contract:processResources NO-SOURCE
+> Task :wearable-contract:classes UP-TO-DATE
+> Task :wearable-security:jar UP-TO-DATE
+> Task :wearable-contract:jar UP-TO-DATE
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :wearable-security:compileTestFixturesKotlin UP-TO-DATE
+> Task :wearable-security:compileTestFixturesJava NO-SOURCE
+> Task :wearable-security:processTestFixturesResources NO-SOURCE
+> Task :wearable-security:testFixturesClasses UP-TO-DATE
+> Task :wearable-security:testFixturesJar UP-TO-DATE
+> Task :wear-app:preBuild UP-TO-DATE
+> Task :wear-app:preDebugBuild UP-TO-DATE
+> Task :wear-app:generateDebugResources UP-TO-DATE
+> Task :wear-app:packageDebugResources UP-TO-DATE
+> Task :app:generateDebugBuildConfig FROM-CACHE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :wear-app:processDebugNavigationResources UP-TO-DATE
+> Task :wear-app:parseDebugLocalResources UP-TO-DATE
+> Task :wear-app:generateDebugRFile UP-TO-DATE
+> Task :wear-app:compileDebugKotlin UP-TO-DATE
+> Task :wear-app:javaPreCompileDebug UP-TO-DATE
+> Task :wear-app:compileDebugJavaWithJavac NO-SOURCE
+> Task :wear-app:checkDebugAarMetadata UP-TO-DATE
+> Task :wear-app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :wear-app:compileDebugNavigationResources UP-TO-DATE
+> Task :wear-app:mergeDebugResources UP-TO-DATE
+> Task :wear-app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :wear-app:extractDeepLinksDebug UP-TO-DATE
+> Task :wear-app:processDebugMainManifest UP-TO-DATE
+> Task :wear-app:processDebugManifest UP-TO-DATE
+> Task :wear-app:processDebugManifestForPackage UP-TO-DATE
+> Task :wear-app:processDebugResources UP-TO-DATE
+> Task :wear-app:bundleDebugClassesToRuntimeJar UP-TO-DATE
+> Task :wear-app:bundleDebugClassesToCompileJar UP-TO-DATE
+> Task :wear-app:preDebugUnitTestBuild UP-TO-DATE
+> Task :wear-app:compileDebugUnitTestKotlin UP-TO-DATE
+> Task :wear-app:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :wear-app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugNavigationResources FROM-CACHE
+> Task :wear-app:processDebugJavaRes UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :wear-app:processDebugUnitTestJavaRes UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+> Task :app:kspDebugKotlin FROM-CACHE
+> Task :app:compileDebugKotlin FROM-CACHE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac FROM-CACHE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :wear-app:testDebugUnitTest
+> Task :wearable-contract:compileTestKotlin UP-TO-DATE
+> Task :wearable-contract:compileTestJava NO-SOURCE
+> Task :wearable-contract:processTestResources NO-SOURCE
+> Task :wearable-contract:testClasses UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug FROM-CACHE
+> Task :app:processDebugMainManifest FROM-CACHE
+> Task :app:processDebugManifest FROM-CACHE
+> Task :app:processDebugManifestForPackage FROM-CACHE
+> Task :wearable-contract:test
+> Task :wearable-security:compileTestKotlin UP-TO-DATE
+> Task :wearable-security:compileTestJava NO-SOURCE
+> Task :wearable-security:processTestResources NO-SOURCE
+> Task :wearable-security:testClasses UP-TO-DATE
+> Task :app:processDebugResources FROM-CACHE
+> Task :app:bundleDebugClassesToRuntimeJar UP-TO-DATE
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:kspDebugUnitTestKotlin UP-TO-DATE
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:compileDebugUnitTestKotlin UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:processDebugUnitTestJavaRes UP-TO-DATE
+> Task :wearable-security:test
+> Task :app:testDebugUnitTest
+
+[Incubating] Problems report is available at: file:///workspace/work/sentinel-reference/native-android-app/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 29s
+62 actionable tasks: 6 executed, 10 from cache, 46 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.8.0/userguide/configuration_cache_enabling.html
+
+===== Comptage des résultats XML JVM =====
+app:testDebugUnitTest suites/tests/failures/errors/skipped: 345 1650 0 0 0
+wear-app:testDebugUnitTest suites/tests/failures/errors/skipped: 7 27 0 0 0
+wearable-contract:test suites/tests/failures/errors/skipped: 2 6 0 0 0
+wearable-security:test suites/tests/failures/errors/skipped: 4 37 0 0 0
+TOTAL 358 1720 0 0 0
+
+===== Première compilation Kotlin instrumentée C11 — PASS =====
+cc877a290c6af938235fbcdc8397636586fb0538
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :wearable-security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :wearable-contract:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :wearable-security:compileKotlin UP-TO-DATE
+> Task :wearable-contract:compileKotlin UP-TO-DATE
+> Task :wearable-contract:compileJava NO-SOURCE
+> Task :wearable-security:compileJava NO-SOURCE
+> Task :wearable-contract:processResources NO-SOURCE
+> Task :wearable-contract:classes UP-TO-DATE
+> Task :wearable-security:processResources NO-SOURCE
+> Task :wearable-security:classes UP-TO-DATE
+> Task :wearable-contract:jar UP-TO-DATE
+> Task :wearable-security:jar UP-TO-DATE
+> Task :app:generateDebugBuildConfig
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:processDebugNavigationResources
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:compressDebugAssets UP-TO-DATE
+> Task :app:generateDebugGlobalSynthetics UP-TO-DATE
+> Task :app:l8DexDesugarLibDebug UP-TO-DATE
+> Task :app:checkDebugDuplicateClasses UP-TO-DATE
+> Task :app:desugarDebugFileDependencies UP-TO-DATE
+> Task :app:mergeExtDexDebug UP-TO-DATE
+> Task :app:mergeLibDexDebug UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:processDebugManifestForPackage
+> Task :app:processDebugResources
+> Task :app:mergeDebugJniLibFolders UP-TO-DATE
+> Task :app:mergeDebugNativeLibs UP-TO-DATE
+> Task :app:stripDebugDebugSymbols UP-TO-DATE
+> Task :app:validateSigningDebug UP-TO-DATE
+> Task :app:writeDebugAppMetadata UP-TO-DATE
+> Task :app:writeDebugSigningConfigVersions UP-TO-DATE
+> Task :app:preDebugAndroidTestBuild SKIPPED
+> Task :app:mergeDebugAndroidTestManifest
+> Task :app:processDebugAndroidTestManifest
+> Task :app:generateDebugAndroidTestBuildConfig
+> Task :app:generateDebugAndroidTestResources UP-TO-DATE
+> Task :app:packageDebugAndroidTestResources UP-TO-DATE
+> Task :app:processDebugAndroidTestNavigationResources UP-TO-DATE
+> Task :app:parseDebugAndroidTestLocalResources UP-TO-DATE
+> Task :app:generateDebugAndroidTestRFile UP-TO-DATE
+> Task :app:javaPreCompileDebugAndroidTest UP-TO-DATE
+> Task :app:generateDebugAndroidTestAssets UP-TO-DATE
+> Task :app:mergeDebugAndroidTestAssets UP-TO-DATE
+> Task :app:compressDebugAndroidTestAssets UP-TO-DATE
+> Task :app:generateDebugAndroidTestGlobalSynthetics UP-TO-DATE
+> Task :app:checkDebugAndroidTestDuplicateClasses UP-TO-DATE
+> Task :app:desugarDebugAndroidTestFileDependencies UP-TO-DATE
+> Task :app:mergeExtDexDebugAndroidTest UP-TO-DATE
+> Task :app:mergeLibDexDebugAndroidTest UP-TO-DATE
+> Task :app:checkDebugAndroidTestAarMetadata UP-TO-DATE
+> Task :app:mapDebugAndroidTestSourceSetPaths UP-TO-DATE
+> Task :app:compileDebugAndroidTestNavigationResources UP-TO-DATE
+> Task :app:mergeDebugAndroidTestResources UP-TO-DATE
+> Task :app:processDebugAndroidTestResources
+> Task :app:mergeDebugAndroidTestJniLibFolders UP-TO-DATE
+> Task :app:mergeDebugAndroidTestNativeLibs NO-SOURCE
+> Task :app:stripDebugAndroidTestDebugSymbols NO-SOURCE
+> Task :app:validateSigningDebugAndroidTest UP-TO-DATE
+> Task :app:writeDebugAndroidTestSigningConfigVersions UP-TO-DATE
+> Task :app:kspDebugKotlin
+> Task :app:compileDebugKotlin
+> Task :app:compileDebugJavaWithJavac
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:mergeDebugJavaResource UP-TO-DATE
+> Task :app:dexBuilderDebug
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:kspDebugAndroidTestKotlin
+> Task :app:mergeProjectDexDebug
+> Task :app:packageDebug
+> Task :app:createDebugApkListingFileRedirect
+> Task :app:assembleDebug
+> Task :app:compileDebugAndroidTestKotlin
+> Task :app:compileDebugAndroidTestJavaWithJavac
+> Task :app:processDebugAndroidTestJavaRes
+> Task :app:mergeDebugAndroidTestJavaResource
+> Task :app:dexBuilderDebugAndroidTest
+> Task :app:mergeProjectDexDebugAndroidTest
+> Task :app:packageDebugAndroidTest
+> Task :app:createDebugAndroidTestApkListingFileRedirect
+> Task :app:assembleDebugAndroidTest
+
+[Incubating] Problems report is available at: file:///workspace/work/sentinel-reference/native-android-app/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 52s
+78 actionable tasks: 29 executed, 49 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.8.0/userguide/configuration_cache_enabling.html
+
+===== Assemblage des deux APK C11 dédiés — PASS =====
+ea5f0a7d019b1113dd25810a6f325db789f38f39
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :wearable-security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :wearable-contract:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :wearable-contract:compileKotlin UP-TO-DATE
+> Task :wearable-security:compileKotlin UP-TO-DATE
+> Task :wearable-contract:compileJava NO-SOURCE
+> Task :wearable-security:compileJava NO-SOURCE
+> Task :wearable-contract:processResources NO-SOURCE
+> Task :wearable-security:processResources NO-SOURCE
+> Task :wearable-contract:classes UP-TO-DATE
+> Task :wearable-security:classes UP-TO-DATE
+> Task :wearable-contract:jar UP-TO-DATE
+> Task :wearable-security:jar UP-TO-DATE
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+> Task :app:kspDebugKotlin UP-TO-DATE
+> Task :app:compileDebugKotlin UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:compressDebugAssets UP-TO-DATE
+> Task :app:generateDebugGlobalSynthetics UP-TO-DATE
+> Task :app:l8DexDesugarLibDebug UP-TO-DATE
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:mergeDebugJavaResource UP-TO-DATE
+> Task :app:checkDebugDuplicateClasses UP-TO-DATE
+> Task :app:desugarDebugFileDependencies UP-TO-DATE
+> Task :app:mergeExtDexDebug UP-TO-DATE
+> Task :app:mergeLibDexDebug UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:mergeDebugJniLibFolders UP-TO-DATE
+> Task :app:mergeDebugNativeLibs UP-TO-DATE
+> Task :app:stripDebugDebugSymbols UP-TO-DATE
+> Task :app:validateSigningDebug UP-TO-DATE
+> Task :app:writeDebugAppMetadata UP-TO-DATE
+> Task :app:writeDebugSigningConfigVersions UP-TO-DATE
+> Task :app:preDebugAndroidTestBuild SKIPPED
+> Task :app:mergeDebugAndroidTestManifest UP-TO-DATE
+> Task :app:processDebugAndroidTestManifest UP-TO-DATE
+> Task :app:generateDebugAndroidTestBuildConfig UP-TO-DATE
+> Task :app:generateDebugAndroidTestResources UP-TO-DATE
+> Task :app:packageDebugAndroidTestResources UP-TO-DATE
+> Task :app:processDebugAndroidTestNavigationResources UP-TO-DATE
+> Task :app:parseDebugAndroidTestLocalResources UP-TO-DATE
+> Task :app:generateDebugAndroidTestRFile UP-TO-DATE
+> Task :app:javaPreCompileDebugAndroidTest UP-TO-DATE
+> Task :app:generateDebugAndroidTestAssets UP-TO-DATE
+> Task :app:mergeDebugAndroidTestAssets UP-TO-DATE
+> Task :app:compressDebugAndroidTestAssets UP-TO-DATE
+> Task :app:generateDebugAndroidTestGlobalSynthetics UP-TO-DATE
+> Task :app:checkDebugAndroidTestDuplicateClasses UP-TO-DATE
+> Task :app:desugarDebugAndroidTestFileDependencies UP-TO-DATE
+> Task :app:mergeExtDexDebugAndroidTest UP-TO-DATE
+> Task :app:mergeLibDexDebugAndroidTest UP-TO-DATE
+> Task :app:checkDebugAndroidTestAarMetadata UP-TO-DATE
+> Task :app:mapDebugAndroidTestSourceSetPaths UP-TO-DATE
+> Task :app:compileDebugAndroidTestNavigationResources UP-TO-DATE
+> Task :app:mergeDebugAndroidTestResources UP-TO-DATE
+> Task :app:processDebugAndroidTestResources UP-TO-DATE
+> Task :app:mergeDebugAndroidTestJniLibFolders UP-TO-DATE
+> Task :app:mergeDebugAndroidTestNativeLibs NO-SOURCE
+> Task :app:stripDebugAndroidTestDebugSymbols NO-SOURCE
+> Task :app:validateSigningDebugAndroidTest UP-TO-DATE
+> Task :app:writeDebugAndroidTestSigningConfigVersions UP-TO-DATE
+> Task :app:processDebugManifestForPackage
+> Task :app:processDebugResources
+> Task :app:dexBuilderDebug UP-TO-DATE
+> Task :app:mergeProjectDexDebug UP-TO-DATE
+> Task :app:bundleDebugClassesToCompileJar UP-TO-DATE
+> Task :app:kspDebugAndroidTestKotlin UP-TO-DATE
+> Task :app:compileDebugAndroidTestKotlin UP-TO-DATE
+> Task :app:compileDebugAndroidTestJavaWithJavac UP-TO-DATE
+> Task :app:processDebugAndroidTestJavaRes UP-TO-DATE
+> Task :app:mergeDebugAndroidTestJavaResource UP-TO-DATE
+> Task :app:dexBuilderDebugAndroidTest UP-TO-DATE
+> Task :app:mergeProjectDexDebugAndroidTest UP-TO-DATE
+> Task :app:packageDebugAndroidTest UP-TO-DATE
+> Task :app:createDebugAndroidTestApkListingFileRedirect UP-TO-DATE
+> Task :app:assembleDebugAndroidTest UP-TO-DATE
+> Task :app:packageDebug
+> Task :app:createDebugApkListingFileRedirect UP-TO-DATE
+> Task :app:assembleDebug
+
+[Incubating] Problems report is available at: file:///workspace/work/sentinel-reference/native-android-app/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 17s
+78 actionable tasks: 5 executed, 73 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.8.0/userguide/configuration_cache_enabling.html
+
+===== Intégrité, signature, manifeste test et ADB — PASS / BLOCKED =====
+1:package: name='com.sentinel.quantum.aivalidation.c11' versionCode='10' versionName='1.0.9' platformBuildVersionName='17' platformBuildVersionCode='37' compileSdkVersion='37' compileSdkVersionCodename='17'
+37:application-label:'Sentinel IA validation C11'
+158:native-code: 'arm64-v8a'
+package: name='com.sentinel.quantum.aivalidation.c11.test' versionCode='' versionName='' platformBuildVersionName='17' platformBuildVersionCode='37' compileSdkVersion='37' compileSdkVersionCodename='17'
+        A: http://schemas.android.com/apk/res/android:name(0x01010003)="androidx.test.runner.AndroidJUnitRunner" (Raw: "androidx.test.runner.AndroidJUnitRunner")
+        A: http://schemas.android.com/apk/res/android:targetPackage(0x01010021)="com.sentinel.quantum.aivalidation.c11" (Raw: "com.sentinel.quantum.aivalidation.c11")
+Verifies
+Verified using v2 scheme (APK Signature Scheme v2): true
+Signer #1 certificate SHA-256 digest: 0d5e03ce9117817a0cfe55f2db1368f949218508abe34edf31a013cddde67275
+Verifies
+Verified using v2 scheme (APK Signature Scheme v2): true
+Signer #1 certificate SHA-256 digest: 0d5e03ce9117817a0cfe55f2db1368f949218508abe34edf31a013cddde67275
+87b9f213244ced7bcd633b75da265d142435a1061e695012b8d1bfc7a817174e  sentinel-c11-arm64-debug.apk
+ed17e8797e1d2bd756f571582cb8950385a9a93955f9a3a358067bb0b1207213  sentinel-c11-instrumentation.apk
+sentinel-c11-arm64-debug.apk: OK
+sentinel-c11-instrumentation.apk: OK
+List of devices attached
+
+===== Contrôles sur le manifeste APK fusionné — PASS =====
+PASS ai.SentinelAiActivity {'exported': 'false'}
+PASS security.SentinelInCallService {'exported': 'true', 'permission': 'android.permission.BIND_INCALL_SERVICE'}
+PASS security.SentinelCallScreeningService {'exported': 'true', 'permission': 'android.permission.BIND_SCREENING_SERVICE'}
+PASS security.SentinelMmsDownloadReceiver {'exported': 'false'}
+PASS security.SentinelMmsSendStatusReceiver {'exported': 'false'}
+PASS security.SentinelSmsStatusReceiver {'exported': 'false'}
+PASS app-level usesCleartextTraffic=false in merged C11 APK
+
+===== Lanceur et simulations ADB sans appareil — PASS =====
+PASS bash -n audit/cycle11/validation/qualify_restart.sh
+Harness result, fake adb selected through PATH. No real phone command.
+correct-process: PASS: contract observed
+correct-reboot: PASS: contract observed
+wrong-model: BLOCKED: contract observed
+wrong-pid: FAIL: contract observed
+wrong-run: FAIL: contract observed
+wrong-kind: FAIL: contract observed
+no-junit: FAIL: contract observed
+wrong-scope: FAIL: contract observed
+negative-status: FAIL: contract observed
+duplicate-receipt: FAIL: contract observed
+Offline mock passed 10 cases and 10 existing-output refusals. No phone ADB binary invoked.
+
+===== Service local et contrat loopback — PASS =====
+ea5f0a7d019b1113dd25810a6f325db789f38f39
+......................                                                   [100%]
+=============================== warnings summary ===============================
+../sentinel-tooling/python/venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/work/sentinel-tooling/python/venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+22 passed, 1 warning in 3.30s
+test_global_policy_has_no_extra_overrides_or_trust_changes (__main__.LoopbackPolicyContract.test_global_policy_has_no_extra_overrides_or_trust_changes) ... ok
+test_manifest_uses_named_config_and_retains_global_false (__main__.LoopbackPolicyContract.test_manifest_uses_named_config_and_retains_global_false) ... ok
+test_only_exact_ipv4_loopback_is_excepted (__main__.LoopbackPolicyContract.test_only_exact_ipv4_loopback_is_excepted) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.001s
+
+OK
+
+===== Lecture publique et provenance de déploiement =====
+2026-11-18T18:42:58Z
+200 https://sentinelquantumvanguardaipro.pages.dev/ 23207 bytes
+Exact b717802 HTML match not established
+200 https://sentinelquantumvanguardaipro.pages.dev/public/roadmap 14718 bytes
+Exact b717802 HTML match not established
+200 https://sentinelquantumvanguardaipro.pages.dev/public/mobile-security 15604 bytes
+Exact b717802 HTML match not established
+200 https://sentinelquantumvanguardaipro.pages.dev/public/download.html 23207 bytes
+Exact b717802 HTML match not established
+200 https://sentinelquantumvanguardaipro.pages.dev/public/pricing 10713 bytes
+Exact b717802 HTML match not established
+HTTP 200 https://sentinelquantumvanguardaipro.pages.dev/public/download-guide
+6:  <meta name="description" content="État de distribution de Sentinel : Android en validation, aucun APK public pour le moment et client PC planifié.">
+77:      <div><span class="eyebrow">Surfaces</span><h2 id="channels-title">Web disponible. Android en validation. PC planifié.</h2></div>
+88:    <div><span class="eyebrow">Canal officiel</span><h2>Télécharger uniquement lorsque cette page publiera la preuve correspondante.</h2><p>La signature, le checksum et le statut de validation feront partie du canal de distribution, pas d’un lien externe improvisé.</p></div>
+
+===== Périmètre Git et branches distantes =====
+PASS protected production and historical C9/C10 paths
+PASS Git whitespace on code commits
+b717802b171c6324ce7c8559e92d7c36cc2fd04a	refs/heads/fix/sentinel-ai-revocation-barrier-20261118
+935344423b2af2a4a57c58123f2c5c178b46ec03	refs/heads/main

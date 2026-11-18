@@ -1,5 +1,7 @@
 # Sentinel IA · révocation globale P0 · 18 novembre 2026
 
+Ce rapport conserve la preuve historique du premier build C11. Pour une nouvelle installation, utiliser le [paquet C11 dédié et la procédure S24+](VALIDATION_S24_PLUS.md). La recette historique reproduite plus bas partage le paquet C9.
+
 **NO-GO pour la qualification globale.** Le code a des preuves JVM et de compilation Android. L'exécution sur Galaxy S24+ avec deux activités, Keyguard, AndroidKeyStore et le service local reste requise.
 
 - Branche dédiée `fix/sentinel-ai-revocation-barrier-20261118`
