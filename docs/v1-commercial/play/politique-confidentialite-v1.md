@@ -43,7 +43,7 @@ La personne qui publie l’application est une personne physique. Les éléments
 | Adresse déclarée | 227 rue du Docteur Ledentu, Morne-à-l’Eau, Guadeloupe, France. Le code postal de la commune de Morne-à-l’Eau est 97111. |
 | Contrôle public de cette adresse | Non fait. Une recherche du 18 novembre 2026 n’a pas retrouvé cette formulation. Elle n’a pas été remplacée par une autre rue. |
 | E-mail de contact, support et confidentialité | SentinelQuantumVanguardAiPro@gmail.com |
-| Téléphone | [[À COMPLÉTER : numéro réellement utilisé, s’il doit être communiqué. Ne pas l’inventer.]] |
+| Téléphone | +33 6 52 21 58 72 |
 | Délégué à la protection des données | [[À COMPLÉTER : nom et contact, ou la mention exacte « non désigné »]] |
 
 L’adresse `SentinelQuantumVanguardAiPro@gmail.com` est le contact confirmé. Elle reçoit les demandes de confidentialité et le support. Cette revue n’a pas envoyé de message et ne confirme pas que la boîte est surveillée. Gmail ne distingue pas les majuscules : cette écriture désigne la même boîte que la forme entièrement en minuscules.
