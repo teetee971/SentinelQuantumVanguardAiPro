@@ -28,6 +28,10 @@ class PhoneCoreFrenchLabelsTest {
             "Silencieux indisponible sur cette version d’Android ; l’appel sonne",
             PhoneCoreFrenchLabels.reason("SILENCE_UNSUPPORTED")
         )
+        assertEquals(
+            "Ligne d’arrivée non identifiable ; l’appel sonne",
+            PhoneCoreFrenchLabels.reason("AMBIGUOUS_LINE")
+        )
     }
 
     @Test fun unknownInternalCodesDoNotLeakRawEnglish() {

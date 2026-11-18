@@ -45,9 +45,9 @@ Le retour immédiat sur un appel sortant est conforme au cadre actuel : après `
 | P1-2 | P1 | Corrigé | Décision `IN_DIRECTORY` ou `USER_PREFIX_SILENCE` | La fiche appelant et l’historique affichaient « Motif technique non traduit » pour une décision réelle du moteur. | `PhoneCoreFrenchLabels.kt` |
 | P1-3 | P1 | Corrigé | Silence demandé sur API 24–28, où `setSilenceCall` n’existe pas | Android laisse sonner (`CallResponse` sans restriction) alors que le journal, la fiche et l’historique disaient « mis en sourdine ». Sur l’API 34 du S24+, silence reste silence. | `SentinelCallScreeningService.kt` vers la ligne 102, `CallScreeningPlatformPolicy.kt` |
 | P1-4 | P1 | Corrigé | AppOps `READ_CONTACTS` refusé alors que la permission manifeste paraît encore accordée | Le répertoire mémoire restait prêt. Le silence des inconnus continuait. Les faits Phone Core, eux, utilisent `PermissionChecker`. | `CallDirectoryCache.kt` vers la ligne 114, `LocalContactLookup.kt`, écrans de listes |
-| P1-5 | P1 | Ouvert | Processus froid : appel entrant avant reprise d’activité ou travail post-réponse | Le cache mémoire est vide. Le premier appel est autorisé malgré des règles déjà enregistrées. Le travail post-réponse réchauffe ensuite le cache. Lire le disque dans `onScreenCall` ou `Application.onCreate` est interdit par les contrats de délai. | `CallBlocklistStore.cachedSnapshotForScreening`, `SentinelApplication` |
-| P1-6 | P1 | Ouvert | Deux SIM de pays différents, numéro national `0XXXXXXXXX`, région capturée = SIM par défaut et non la ligne de l’appel | Le `Call.Details` de filtrage ne porte pas le compte téléphonique. La normalisation française ne s’applique que si la région capturée est française. Un blocage `+33` peut rater sur la ligne française. | `ScreeningHomeRegion.kt`, `SentinelCallScreeningService.kt` ligne 87 |
-| P1-7 | P1 | Ouvert | Clés HMAC absentes du cache au premier rappel | Le blocage exact fail-open. Les préfixes, qui ne dépendent pas du HMAC, continuent. | `CallNumberFingerprinter.cachedCandidates` |
+| P1-5 | P1 | Corrigé sous budget de 250 ms | Processus froid : le premier `onScreenCall` lisait un cache vide | `Application.onCreate` ne fait que lancer `ScreeningProcessWarmup` sur un fil d’arrière-plan (règles, clés, régions, parseur). Le callback attend au plus 250 ms, sans ouvrir le disque ni le Keystore. Si le disque dépasse ce budget, cet appel reste fail-open et le chargement continue pour l’appel suivant. Le répertoire contacts reste hors de ce budget. | `ScreeningProcessWarmup.kt`, `SentinelApplication.onCreate`, `SentinelCallScreeningService` |
+| P1-6 | P1 | Limité, non clos | Deux SIM de pays différents. Le `Call.Details` de filtrage ne porte pas la ligne | Les pays SIM lisibles sont capturés hors callback. Une seule identité parsable est utilisée, donc un `0612345678` bloqué en France l’est encore si l’autre SIM ne parse pas ces chiffres. Deux numéros valides qui divergent, ou un contact sur l’un des parses, laissent sonner (`AMBIGUOUS_LINE` ou `IN_DIRECTORY`). Sans `READ_PHONE_STATE`, une seule région reste connue. | `ScreeningHomeRegion.kt`, `ScreeningLineRegionPolicy.kt` |
+| P1-7 | P1 | Corrigé sous le même budget | Clés HMAC absentes au premier rappel | Le fil de préchargement appelle `prepareFingerprintKeys` après l’instantané, sans générer de clé. Le callback n’attend les clés que s’il existe des règles exactes, dans le temps qui reste sur 250 ms. Un Keystore plus lent laisse le blocage exact en fail-open pour cet appel seulement. | `ScreeningProcessWarmup.kt`, `CallNumberFingerprinter.prepareExistingKeys` |
 | P2-1 | P2 | Documenté, non branché | Lecture de `UnknownCallerPolicy` comme si elle filtrait | Favori, liste blanche et rappel de cette politique ne modifient pas l’appel. `PhoneFavoriteStore` interdit aux favoris de changer le filtrage. La brancher contredirait ce contrat. | `UnknownCallerPolicy.kt` |
 | P2-2 | P2 | Ouvert | Consommateur futur de `ScreeningProjection` | Le service V1 n’utilise pas cette projection. Il force les préfixes signés à vide. La projection peut encore les copier. Elle n’applique rien aujourd’hui. | `ScreeningProjection.kt` |
 | P2-3 | P2 | Ouvert | Révocation du rôle entre le second contrôle et `respondToCall` | Une réponse restrictive déjà calculée peut encore être remise. Android reste maître du dernier effet. | `SentinelCallScreeningService.kt` |
@@ -56,7 +56,7 @@ Le retour immédiat sur un appel sortant est conforme au cadre actuel : après `
 | P2-6 | P2 | Ouvert | Plus de 100 préfixes manuels + ARCEP | `effectiveBlockedPrefixes` tronque. Le catalogue ARCEP actuel compte 22 entrées. L’activation refuse déjà un dépassement au moment du choix. | `CallBlocklistStore.Snapshot` |
 | P2-7 | P2 | Préexistant | `scripts/check-phone-core-emulation-gate.js` | Le script exige le littéral `if (emergency != false)`. Le service appelle `screeningMustFailOpen`, équivalent (`null` et `true` ouvrent, `false` continue). Écart déjà présent sur `113862500`. Résultat local de ce script : échec sur ce seul marqueur. | Script de porte, pas le moteur |
 
-Aucun P0 de contournement permanent du blocage n’a été établi sur le code de l’API 34. Le fail-open du premier appel froid (P1-5) et la région unique en double SIM (P1-6) restent des limites de mise en production, à constater sur l’appareil, pas à « réparer » en lisant le disque ou un compte absent du callback.
+Aucun P0 de contournement permanent du blocage n’a été établi sur le code de l’API 34. P1-6 reste limité : Android ne donne pas la ligne au service de filtrage. P1-5 et P1-7 sont couverts quand le préchargement tient dans 250 ms. Au-delà, l’appel concerné sonne et le chargement sert l’appel suivant. Le silence des inconnus attend toujours le répertoire contacts, chargé après la réponse.
 
 ## 4. Correctifs
 
@@ -65,8 +65,11 @@ Aucun P0 de contournement permanent du blocage n’a été établi sur le code d
 - Libellés français pour `IN_DIRECTORY`, `USER_PREFIX_SILENCE` et `SILENCE_UNSUPPORTED`.
 - Répertoire de filtrage, recherche de contact locale et interrupteurs de contacts des écrans de listes passent par `PermissionChecker`. Un refus AppOps ferme le répertoire avant la décision. Les blocages explicites ne dépendent pas de ce répertoire.
 - Commentaire sur `UnknownCallerPolicy` : ce n’est pas l’autorité de filtrage.
+- Préchargement borné des règles et des clés HMAC, hors callback. Budget 250 ms. `onCreate` ne fait que `ScreeningProcessWarmup.schedule(this)`.
+- Politique multi-région : une identité unique est appliquée ; deux parses valides en conflit laissent sonner. La ligne réelle reste inconnue du cadre.
+- Libellé `AMBIGUOUS_LINE`.
 
-Fichiers : `CallRuleEngine.kt`, `CallScreeningPlatformPolicy.kt`, `SentinelCallScreeningService.kt`, `PhoneCoreFrenchLabels.kt`, `CallDirectoryCache.kt`, `LocalContactLookup.kt`, `CallBlockingScreen.kt`, `PhoneProtectionListsScreen.kt`, `UnknownCallerPolicy.kt`, et les trois classes de test correspondantes.
+Fichiers du premier lot : `CallRuleEngine.kt`, `CallScreeningPlatformPolicy.kt`, `SentinelCallScreeningService.kt`, `PhoneCoreFrenchLabels.kt`, `CallDirectoryCache.kt`, `LocalContactLookup.kt`, `CallBlockingScreen.kt`, `PhoneProtectionListsScreen.kt`, `UnknownCallerPolicy.kt`. Fichiers du second lot : `ScreeningProcessWarmup.kt`, `ScreeningLineRegionPolicy.kt`, `ScreeningHomeRegion.kt`, `SentinelApplication.kt`, `scripts/android-startup-contracts.js`, et les tests `ScreeningColdStartWarmupTest`, `ScreeningLineRegionPolicyTest`.
 
 Les gardes suivantes sont inchangées : raccrochage depuis la notification, actions de notification périmées, gardes de rôle SMS/MMS, journal MMS durable, recontrôle de permission avant envoi, frontière de réponse unique, invalidation du répertoire par génération.
 
@@ -74,9 +77,13 @@ Les gardes suivantes sont inchangées : raccrochage depuis la notification, acti
 
 Base du diff : `113862500b9579e2ce476c190ad3195f676ffdda`.
 
-Commit des correctifs, des tests et de la première version de ce rapport : `34e8848041ccb389853c81e6fdb60326ad52a652`.
+| Commit | Contenu |
+| --- | --- |
+| `34e8848041ccb389853c81e6fdb60326ad52a652` | P1-1 à P1-4, tests et première version du rapport |
+| `bac9e1aa78a45e3aec482f174138efcce6b40325` | SHA du commit précédent inscrit dans le rapport |
+| Commit P1-5 / P1-6 / P1-7 | Préchargement borné, mitigation double SIM, ce tableau mis à jour. Son SHA est ajouté par le commit de documentation suivant. |
 
-`git diff --stat 113862500b9579e2ce476c190ad3195f676ffdda 34e8848041ccb389853c81e6fdb60326ad52a652` : 13 fichiers, +328 / −20. Le rapport compte dans ce volume. Les 12 fichiers de code, avant le rapport, faisaient +168 / −20. Aucun module exclu du profil V1 n’est réactivé. Le commit qui inscrit ce SHA dans le rapport est le successeur immédiat sur la même branche.
+`git diff --stat 113862500… 34e884804…` : 13 fichiers, +328 / −20. Aucun module exclu du profil V1 n’est réactivé.
 
 ## 6. Commandes réellement exécutées
 
@@ -93,6 +100,10 @@ Environnement cloud : JDK 21 déjà présent ; JDK 17 installé pour la toolchai
 | `node --test security/phone-intelligence/private-phone-record-boundaries.test.js` | **PASS.** 8 tests. |
 | `:app:assembleDebug :app:assembleDebugAndroidTest` avec `-PsentinelCommercialV1=true` | **PASS de compilation.** APK non installé, tests instrumentés non lancés. |
 | `node scripts/check-phone-core-emulation-gate.js` | **ÉCHEC** sur le marqueur préexistant `if (emergency != false)`. |
+| Tests P1-5/P1-6/P1-7 avant le code | **FAIL de compilation.** `ScreeningProcessWarmup` et `ScreeningLineRegionPolicy` absents (`UNRESOLVED_REFERENCE`). |
+| `ScreeningColdStartWarmupTest`, `ScreeningLineRegionPolicyTest` et classes de filtrage déjà vertes, profil V1 | **PASS.** 3 + 4 tests nouveaux, 0 échec. Régressions ciblées vertes (moteur, politique, libellés, identité internationale, démarrage froid, frontières). |
+| `node --test scripts/android-startup-contracts.test.js security/phone-intelligence/call-screening-pre-response-io.test.js` depuis la racine | **PASS.** 15 tests. Le callback ne contient ni disque ni Keystore. `onCreate` n’accepte que `ScreeningProcessWarmup.schedule(this)`. |
+| `:app:testDebugUnitTest :wearable-contract:test :wearable-security:test :app:assembleDebug :app:assembleDebugAndroidTest` profil V1 | **PASS.** Application 1 676 tests / 349 suites, 0 échec. Wearable 6 et 37, tâches à jour (sources inchangées, déjà exécutées dans cette session). `assembleDebug` reconstruit. `assembleDebugAndroidTest` à jour et réussi. Aucun APK installé. |
 | Installation, rôle, appel, SMS, MMS, redémarrage | **NON EXÉCUTÉ.** |
 
 APK debug produit dans cette VM, non installé :
@@ -110,11 +121,14 @@ Ce certificat n’est pas celui rapporté sur le S24+ (`68915958f2f8683afead51cc
 
 | Essai | Résultat |
 | --- | --- |
-| Reproduction P1-1, P1-2, P1-3, P1-4 avant correctif | FAIL, motif ci-dessus |
-| `CallRuleEngineTest`, `CallScreeningPolicyTest`, `PhoneCoreFrenchLabelsTest`, frontières de réponse, `UnknownCallerPolicyTest`, `InternationalNumberIdentityTest`, `NeighborNumberMatcherTest`, projection et frontières d’intelligence, démarrage froid | PASS · 87 |
-| Unités application, profil V1 | PASS · 1 669 |
-| `:wearable-contract:test` | PASS · 6 |
-| `:wearable-security:test` | PASS · 37 |
+| Reproduction P1-1 à P1-4 avant correctif | FAIL, motif du premier passage |
+| Reproduction P1-5 et P1-6 avant le préchargement | FAIL de compilation, symboles absents |
+| Classes ciblées après P1-1 à P1-4 | PASS · 87 |
+| `ScreeningColdStartWarmupTest` et `ScreeningLineRegionPolicyTest` après correctif | PASS · 3 et 4 |
+| Unités application, profil V1, après P1-5/P1-6/P1-7 | PASS · 1 676 |
+| `:wearable-contract:test` | PASS · 6, à jour |
+| `:wearable-security:test` | PASS · 37, à jour |
+| Contrats Node démarrage et absence d’E/S avant réponse | PASS · 15 |
 | Contrats Node répertoire / contacts / journal | PASS · 8 |
 | Assemblage debug + androidTest, profil V1 | PASS de build seulement |
 | Porte `check-phone-core-emulation-gate.js` | FAIL · marqueur préexistant |
@@ -156,7 +170,8 @@ adb -s "$S24_SERIAL" shell getprop ro.product.model
 - Signature de release (`KEYSTORE_FILE`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`) absente. L’AAB signé Play n’existe pas.
 - Politique Play pour le rôle de filtrage d’appels, le rôle SMS par défaut, et les permissions sensibles (`READ_CONTACTS`, journal d’appels, téléphone, SMS, MMS). Fiche Data safety et déclaration de gestionnaire d’appels / SMS non vérifiées dans la console.
 - A01 à A14 non exécutés : installation et navigation, refus puis octroi des rôles, appels entrants et sortants, raccrochage par notification, filtrage effectif, contacts et historique, SMS et MMS opérateur, révocation pendant les opérations, reprise après fermeture et redémarrage, restitution des titulaires d’origine.
-- P1-5, P1-6 et P1-7 à observer sur le S24+ double SIM. Le premier appel après redémarrage et un numéro national sur chaque ligne font partie de A05, A07 et A12.
+- P1-6 reste limité sur appareil : la ligne n’est pas dans le callback. A05 et A07 doivent observer un numéro national sur chaque SIM, y compris quand les deux parses divergent.
+- P1-5 et P1-7 restent à chronométrer sur le S24+ après redémarrage (A12, A07). Le budget de 250 ms n’a pas été mesuré sur cet appareil. Un disque ou un Keystore plus lent laisse sonner le premier appel.
 - Le certificat debug de recette doit être unique et connu avant la campagne. Trois empreintes circulent déjà (archive, téléphone cité, VM de cet audit).
 
 **Décision : NO-GO.**
