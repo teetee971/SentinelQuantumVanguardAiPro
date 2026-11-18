@@ -67,6 +67,11 @@ class ArcepDirectoryClient(
         return parseAccepted(text)
     }
 
+    /**
+     * Synchronous GET. A revocation is observed before the call and after the body returns.
+     * The in-flight call itself is not cancelled: turning the switch off does not abort bytes
+     * already on the wire. Those bytes are discarded and are not stored.
+     */
     private fun downloadText(): String {
         val request = Request.Builder().url(DIRECTORY_URL).header("Accept", "application/json").get().build()
         client.newCall(request).execute().use { response ->

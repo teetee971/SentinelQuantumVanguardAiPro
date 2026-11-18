@@ -2,7 +2,16 @@
 
 **18 novembre 2026, mis à jour après les correctifs P0 de code. Verdict : NO-GO production.**
 
-A2 et A3 sont corrigés dans le source : aucun GET de catalogue sans l’interrupteur, y compris la fiche d’appel, le composeur, l’écran de recherche et le worker. Une copie déjà en mémoire ou sur disque reste lisible. A1 reste bloquant : aucune URL HTTPS de la politique V1 n’a répondu autre chose que la coquille du site. Le bouton ouvre encore la politique de vitrine vérifiée, via `CommercialPrivacyPolicyLink`, et l’écran le dit. A4 reste non exécuté.
+A2 et A3 sont corrigés dans le source : aucun GET de catalogue sans l’interrupteur, y compris la fiche d’appel, le composeur, l’écran de recherche et le worker. Une copie déjà en mémoire reste lisible. Couper l’interrupteur pendant un transfert ignore le document, mais n’annule pas l’appel HTTP déjà parti. A1 reste bloquant : la politique V1 contient encore des champs vides, et Cloudflare Pages ne publie que `main`. A4 : pas d’AAB signé, pas de S24+.
+
+Qualification locale du 18 novembre 2026, profil `-PsentinelCommercialV1=true`, après les tests de course :
+
+- `:app:testDebugUnitTest` : 349 suites, 1 676 tests, 0 échec, 0 erreur, 0 ignoré. Les modules Wear ne sont pas dans cette commande.
+- `:app:lintDebug` : la tâche a réussi. `lint-results-debug.xml` contient 0 `severity="Error"` et 246 `severity="Warning"`.
+- `:app:compileReleaseUnsignedKotlin` : réussi. Ce n’est pas un AAB signé.
+- Manifeste `releaseUnsigned` fusionné : PASS, `com.sentinel.quantum`, versionName 1.0.9, versionCode 10, targetSdk 36. Aucune occurrence auth0, livekit, wireguard, wearable, RECORD_AUDIO ni BILLING dans ce XML.
+- Le graphe `releaseUnsignedRuntimeClasspath` contient encore `io.livekit:livekit-android:2.29.0`, `com.auth0.android:auth0:3.21.1-beta.0`, `com.wireguard.android:tunnel:1.0.20260102` et `com.google.android.gms:play-services-wearable:20.0.1`. Pas de `play-services-ads` ni de Billing dans ce graphe.
+- `KEYSTORE_FILE` est absent. Aucune clé n’a été créée. Aucun envoi Play.
 
 Cet audit a lu le dépôt sur `cursor/v1-play-compliance-20261118-c39e` et les pages Play citées. Il n’a pas ouvert la Play Console, pas reconstruit l’AAB, pas capturé le réseau, pas exécuté les tests. Le compte Play n’est pas à recréer. Aucune fusion. La PR #1767 n’est pas modifiée.
 

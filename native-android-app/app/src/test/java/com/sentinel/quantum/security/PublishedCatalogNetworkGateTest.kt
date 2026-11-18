@@ -10,6 +10,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -69,6 +70,80 @@ class PublishedCatalogNetworkGateTest {
         assertEquals(1, calls.get())
     }
 
+    @Test fun httpFailureAndInvalidBodyAreNotStored() {
+        val errors = AtomicInteger()
+        val failing = ArcepDirectoryClient(OkHttpClient.Builder().addInterceptor { chain ->
+            errors.incrementAndGet()
+            Response.Builder()
+                .request(chain.request())
+                .protocol(Protocol.HTTP_1_1)
+                .code(503)
+                .message("unavailable")
+                .body("".toResponseBody("text/plain".toMediaType()))
+                .build()
+        }.build())
+        assertFalse(failing.refreshFromNetwork { true })
+        assertLookupBlocked(failing)
+        assertEquals(1, errors.get())
+
+        val invalidCalls = AtomicInteger()
+        val invalid = ArcepDirectoryClient(OkHttpClient.Builder().addInterceptor { chain ->
+            invalidCalls.incrementAndGet()
+            jsonResponse(chain.request(), "not-a-catalog")
+        }.build())
+        assertFalse(invalid.refreshFromNetwork { true })
+        assertLookupBlocked(invalid)
+        assertEquals(1, invalidCalls.get())
+    }
+
+    @Test fun timeoutDoesNotCreateALocalCatalog() {
+        val slow = ArcepDirectoryClient(
+            OkHttpClient.Builder()
+                .callTimeout(200, TimeUnit.MILLISECONDS)
+                .addInterceptor {
+                    Thread.sleep(1_000)
+                    throw java.io.IOException("late")
+                }
+                .build()
+        )
+        assertFalse(slow.refreshFromNetwork { true })
+        assertLookupBlocked(slow)
+    }
+
+    @Test fun concurrentLookupsShareOneAuthorizedDownload() {
+        val calls = AtomicInteger()
+        val http = OkHttpClient.Builder().addInterceptor { chain ->
+            calls.incrementAndGet()
+            jsonResponse(
+                chain.request(),
+                """{"schemaVersion":2,"entries":[["0600000000","0699999999","OP","FR","2020-01-01"]],"operators":{"OP":["Opérateur test"]}}"""
+            )
+        }.build()
+        val client = ArcepDirectoryClient(http)
+        val results = arrayOfNulls<ArcepDirectoryClient.Allocation>(2)
+        val threads = List(2) { index ->
+            Thread {
+                results[index] = client.lookup("0612345678") { true }
+            }
+        }
+        threads.forEach { it.start() }
+        threads.forEach { it.join(3_000) }
+        assertEquals("OP", results[0]?.operatorCode)
+        assertEquals("OP", results[1]?.operatorCode)
+        assertEquals(1, calls.get())
+    }
+
+    @Test fun disabledSearchThenReenabledSearchIssuesOneGet() {
+        val calls = AtomicInteger()
+        val client = ArcepDirectoryClient(clientThatCounts(calls))
+        assertFalse(client.refreshFromNetwork { false })
+        assertLookupBlocked(client)
+        client.refreshFromNetwork { true }
+        val found = client.lookup("0612345678") { false }
+        assertNull(found)
+        assertEquals(1, calls.get())
+    }
+
     @Test fun screeningServiceDoesNotReferenceCatalogClients() {
         val source = java.io.File(
             "src/main/java/com/sentinel/quantum/security/SentinelCallScreeningService.kt"
@@ -76,6 +151,15 @@ class PublishedCatalogNetworkGateTest {
         assertFalse(source.contains("ArcepDirectoryClient"))
         assertFalse(source.contains("RtrDirectoryClient"))
         assertFalse(source.contains("refreshFromNetwork"))
+        assertFalse(source.contains("CatalogNetworkDisabled"))
+    }
+
+    private fun assertLookupBlocked(client: ArcepDirectoryClient) {
+        try {
+            client.lookup("0612345678") { false }
+            throw AssertionError("failed download must not become a usable catalog")
+        } catch (_: CatalogNetworkDisabled) {
+        }
     }
 
     @Test fun callerCardAndDialerPassTheLiveSwitchIntoLookup() {
