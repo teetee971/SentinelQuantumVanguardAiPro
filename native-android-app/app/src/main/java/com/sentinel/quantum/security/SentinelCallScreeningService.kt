@@ -69,7 +69,7 @@ class SentinelCallScreeningService : CallScreeningService() {
             return
         }
 
-        val decision = runCatching {
+        val engineDecision = runCatching {
             // Strict screening boundary: process-memory caches only. Do not instantiate
             // CallBlocklistStore here because its constructor obtains SharedPreferences.
             // The permission check below does not query ContactsContract.
@@ -99,8 +99,10 @@ class SentinelCallScreeningService : CallScreeningService() {
             }
             return
         }
+        val projected = projectScreeningDecision(engineDecision, Build.VERSION.SDK_INT)
+        val decision = engineDecision.copy(action = projected.action, reason = projected.reason)
         val response = CallResponse.Builder()
-        when (callScreeningPlatformEffect(decision.action, Build.VERSION.SDK_INT)) {
+        when (projected.effect) {
             CallScreeningPlatformEffect.REJECT -> response
                 .setDisallowCall(true)
                 .setRejectCall(true)

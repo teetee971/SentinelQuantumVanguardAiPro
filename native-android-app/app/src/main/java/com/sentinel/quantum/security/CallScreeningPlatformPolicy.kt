@@ -31,3 +31,34 @@ internal fun callScreeningPlatformEffect(
  */
 internal fun screeningMustFailOpen(emergencyClassification: Boolean?): Boolean =
     emergencyClassification != false
+
+/**
+ * What Android will actually do, and therefore the only action the log and the caller card may show.
+ * Silence requested below Android 10 becomes an allow: the call rings.
+ */
+internal data class ProjectedScreeningDecision(
+    val action: CallRuleEngine.Action,
+    val reason: String,
+    val effect: CallScreeningPlatformEffect
+)
+
+internal fun projectScreeningDecision(
+    decision: CallRuleEngine.Decision,
+    sdkInt: Int
+): ProjectedScreeningDecision {
+    val effect = callScreeningPlatformEffect(decision.action, sdkInt)
+    return when {
+        decision.action == CallRuleEngine.Action.SILENCE &&
+            effect == CallScreeningPlatformEffect.ALLOW ->
+            ProjectedScreeningDecision(
+                action = CallRuleEngine.Action.ALLOW,
+                reason = "SILENCE_UNSUPPORTED",
+                effect = effect
+            )
+        effect == CallScreeningPlatformEffect.REJECT ->
+            ProjectedScreeningDecision(CallRuleEngine.Action.BLOCK, decision.reason, effect)
+        effect == CallScreeningPlatformEffect.SILENCE ->
+            ProjectedScreeningDecision(CallRuleEngine.Action.SILENCE, decision.reason, effect)
+        else -> ProjectedScreeningDecision(CallRuleEngine.Action.ALLOW, decision.reason, effect)
+    }
+}

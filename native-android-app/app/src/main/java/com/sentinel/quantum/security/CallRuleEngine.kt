@@ -198,6 +198,7 @@ class CallRuleEngine(
                     e164FromNational(digits)
                 digits.startsWith('0') && homeRegion.uppercase() !in FRENCH_HOME ->
                     InternationalNumberParser.toE164(input, homeRegion)
+                homeRegion.uppercase() in FRENCH_HOME -> promoteUnprefixedFrenchNumber(digits) ?: digits
                 else -> digits
             }
         }
@@ -254,8 +255,7 @@ class CallRuleEngine(
                 input.startsWith('+') -> foldLegacyOverseas("+$digits")
                 digits.startsWith("00") && digits.length >= 3 -> foldLegacyOverseas("+${digits.drop(2)}")
                 digits.startsWith('0') && digits.length >= 3 -> e164FromNational(digits)
-                digits.length >= 3 -> digits
-                else -> null
+                else -> promoteUnprefixedFrenchPrefix(digits) ?: digits.takeIf { it.length >= 3 }
             }
         }
 
@@ -304,6 +304,35 @@ class CallRuleEngine(
             val national = nationalForm(canonical) ?: return null
             if (!isOverseasNational(national)) return null
             return "+33${national.drop(1)}"
+        }
+
+        /**
+         * A complete French or overseas number sometimes arrives as country-code digits without '+'.
+         * Only those exact lengths are promoted, and only for a French home region. A shorter or
+         * foreign digit string stays unchanged so it cannot be mistaken for a French identity.
+         */
+        private fun promoteUnprefixedFrenchNumber(digits: String): String? = when {
+            digits.startsWith("33") && digits.length == 11 -> foldLegacyOverseas("+$digits")
+            digits.startsWith("590") && digits.length == 12 -> "+$digits"
+            digits.startsWith("594") && digits.length == 12 -> "+$digits"
+            digits.startsWith("596") && digits.length == 12 -> "+$digits"
+            digits.startsWith("262") && digits.length == 12 -> "+$digits"
+            digits.startsWith("508") && digits.length == 9 -> "+$digits"
+            else -> null
+        }
+
+        /** Prefix rules are stored in the French plan. "33612" and "+33612" must name the same rule. */
+        private fun promoteUnprefixedFrenchPrefix(digits: String): String? = when {
+            digits.startsWith("33") && digits.length >= 3 -> {
+                val e164 = "+$digits"
+                if (e164.length == 12) foldLegacyOverseas(e164) else e164
+            }
+            digits.startsWith("590") && digits.length >= 3 -> "+$digits"
+            digits.startsWith("594") && digits.length >= 3 -> "+$digits"
+            digits.startsWith("596") && digits.length >= 3 -> "+$digits"
+            digits.startsWith("262") && digits.length >= 3 -> "+$digits"
+            digits.startsWith("508") && digits.length >= 3 -> "+$digits"
+            else -> null
         }
 
         private fun e164FromNational(digits: String): String {
