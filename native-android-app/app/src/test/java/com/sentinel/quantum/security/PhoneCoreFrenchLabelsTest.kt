@@ -15,6 +15,21 @@ class PhoneCoreFrenchLabelsTest {
         )
     }
 
+    @Test fun directoryAndSilenceReasonsStayInFrench() {
+        assertEquals(
+            "Numéro présent dans le répertoire",
+            PhoneCoreFrenchLabels.reason("IN_DIRECTORY")
+        )
+        assertEquals(
+            "Préfixe mis en silencieux par choix",
+            PhoneCoreFrenchLabels.reason("USER_PREFIX_SILENCE")
+        )
+        assertEquals(
+            "Silencieux indisponible sur cette version d’Android ; l’appel sonne",
+            PhoneCoreFrenchLabels.reason("SILENCE_UNSUPPORTED")
+        )
+    }
+
     @Test fun unknownInternalCodesDoNotLeakRawEnglish() {
         assertEquals("État non traduit", PhoneCoreFrenchLabels.action("SOME_NEW_ACTION"))
         assertEquals("Source technique non traduite", PhoneCoreFrenchLabels.source("SOME_SOURCE"))
