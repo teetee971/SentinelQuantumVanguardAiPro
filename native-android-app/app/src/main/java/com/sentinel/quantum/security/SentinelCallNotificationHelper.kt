@@ -51,7 +51,19 @@ object SentinelCallNotificationHelper {
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
                 PackageManager.PERMISSION_GRANTED
-        ) return false
+        ) {
+            if (
+                InCallActivityLaunchPolicy.shouldRequest(
+                    InCallActivityLaunchPolicy.Trigger.INCOMING_NOTIFICATION_FALLBACK,
+                    hasActiveCall = true,
+                    outgoingCall = !incoming,
+                    notificationPermissionGranted = false
+                )
+            ) {
+                openIncomingCallScreen(context)
+            }
+            return false
+        }
 
         val manager = NotificationManagerCompat.from(context)
         if (!manager.areNotificationsEnabled()) return false
@@ -131,6 +143,22 @@ object SentinelCallNotificationHelper {
             alertPolicy.posted(incoming, snapshot.id)
             true
         }.getOrDefault(false)
+    }
+
+    /**
+     * Direct full-screen incoming UI when POST_NOTIFICATIONS is denied.
+     * False from [showCall] still means the notification itself was not posted.
+     */
+    private fun openIncomingCallScreen(context: Context) {
+        runCatching {
+            context.startActivity(
+                Intent(context, SentinelInCallActivity::class.java).addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                        Intent.FLAG_ACTIVITY_NO_USER_ACTION
+                )
+            )
+        }
     }
 
     /** Lock-screen notification. No CallStyle and no caller identity. */

@@ -116,7 +116,10 @@ internal class InCallEvidenceTracker<K : Any> {
     }
 }
 
-/** Default-dialer outgoing calls and explicit Telecom foreground requests may open call UI. */
+/**
+ * Outgoing calls, an explicit Telecom foreground request, and an incoming call whose
+ * notification permission was refused may open call UI.
+ */
 internal object InCallActivityLaunchPolicy {
     enum class Trigger {
         TELECOM_BRING_TO_FOREGROUND,
@@ -131,7 +134,7 @@ internal object InCallActivityLaunchPolicy {
         notificationPermissionGranted: Boolean = true
     ): Boolean {
         if (!notificationPermissionGranted && trigger == Trigger.INCOMING_NOTIFICATION_FALLBACK) {
-            return false
+            return hasActiveCall && !outgoingCall
         }
         return hasActiveCall && (trigger == Trigger.TELECOM_BRING_TO_FOREGROUND ||
             (trigger == Trigger.CALL_ADDED && outgoingCall))
