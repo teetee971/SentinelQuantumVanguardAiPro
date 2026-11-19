@@ -2,7 +2,7 @@
 
 Verdict : **V1 COMMERCIAL NO-GO**.
 
-Lecture seule. Aucun correctif de code. Aucune fusion. `main`, les cycles C9, C10, C11 et les branches des PR #1767, #1768 et #1769 n’ont pas été modifiés. Les tests JVM ne qualifient ni un appel, ni un SMS, ni un MMS. La machine cloud n’a pas d’appareil. Une observation Termux / ADB sans fil sur un Galaxy S24+ SM-S926B a été faite le 19 novembre 2026 (§6) : rôles et certificat seulement. Aucun appel ni SMS ni MMS opérateur n’a été exercé. Le verdict reste NO-GO.
+Lecture seule. Aucun correctif de code. Aucune fusion. `main`, les cycles C9, C10, C11 et les branches des PR #1767, #1768 et #1769 n’ont pas été modifiés. Les tests JVM ne qualifient ni un appel, ni un SMS, ni un MMS. La machine cloud n’a pas d’appareil. Une observation Termux / ADB sans fil sur un Galaxy S24+ SM-S926B a été faite le 19 novembre 2026 (§6) : rôles et certificat seulement. Une affirmation d’opérateur « postes 100 % / appel SMS MMS » est traitée en §6.1 : elle ne remplace pas la matrice physique V1 ni le invariant `physicalDeviceValidated=false`. Le verdict reste NO-GO.
 
 ## 1. Têtes examinées
 
@@ -160,14 +160,31 @@ Ce que cette observation **prouve** : le binaire installé est bien le paquet de
 
 Ce que cette observation **ne prouve pas** : `onScreenCall`, fail-open à froid sur un vrai appel, silence / blocage, composeur entrant, SMS / MMS opérateur, retrait de rôle en cours de session, double SIM, écran verrouillé. Sans seconde ligne, ces points restent NON EXÉCUTÉS. Le verdict commercial ne bouge pas.
 
+### 6.1 Affirmation « tous les tests postes à 100 %, appel / SMS / MMS »
+
+Affirmation de l’opérateur (19 nov. 2026) : les tests postes, y compris appel, SMS et MMS, seraient déjà à 100 %.
+
+Ce que le dépôt et le code permettent de **rattacher** à cette phrase :
+
+| Source | Contenu | Portée |
+| --- | --- | --- |
+| `PhoneCorePhysicalValidationTest` (`preuves/junit/…PhoneCorePhysicalValidationTest.xml`) | 17 tests, 0 échec (horodatage 2026-11-16) | JVM uniquement. Les événements CALL/SMS/MMS sont **fabriqués** dans le test (`almostCompleteEvents()`), pas lus sur un opérateur. |
+| `PhoneCorePhysicalValidation.Evidence.physicalDeviceValidated` | toujours `false` (`PhoneCorePhysicalValidation.kt:33`) | Même si les 14 critères locaux sont complets (`fullyValidated`), le modèle **refuse** de se promouvoir en validation matérielle / opérateur. |
+| `audit/v1-commercial/S24_PHYSICAL_ACCEPTANCE.md` | A01–A14 en **NON EXÉCUTÉ** ; en-tête **BLOCKED** | Matrice physique V1 officielle du dépôt. |
+| `FEATURE_MATRIX.md` / `TEST_EVIDENCE.md` | Qualifié S24+ = **BLOCKED** pour téléphone, SMS, MMS | Candidat `25c4e2c…` ; installation S24+ absente de ces preuves. |
+| `audit/cycle11/VALIDATION_S24_PLUS.md` | Signale des scénarios Android du propriétaire **non accessibles** ici ; **non attribués** aux APK de la page ; certificat C11 `0d5e03ce…` | Ne couvre pas `v1validation` / cert `68915958…` observé le 19 nov. |
+| Session Termux du 19 nov. | Rôles + cert seulement | Pas d’appel / SMS / MMS observés dans cette session. |
+
+Conclusion de l’audit : un « 100 % » JVM (fixtures ou suites unitaires) **n’est pas** un PASS physique A04–A11. Sans pack de preuve lié au binaire exact (`1.0.9-v1-validation`, cert `68915958…`) — matrice A01–A14 remplie, horodatages, logcat filtré sans PII — l’audit **ne bascule pas** ces lignes en PASS. Le verdict reste **V1 COMMERCIAL NO-GO** (F-01, F-02, F-03 et classpath hors téléphone suffisent déjà).
+
 ## 7. Non exécuté
 
-- Appel entrant ou sortant réel, SMS, MMS, accusé opérateur, double SIM réelle, retrait de rôle pendant un appel / un envoi.
+- Appel entrant ou sortant réel, SMS, MMS, accusé opérateur, double SIM réelle, retrait de rôle pendant un appel / un envoi — **non prouvés** pour le binaire V1 installé le 19 nov. (voir §6.1).
 - Tout émulateur, `connectedDebugAndroidTest`, flux `scripts/phone-core-emulator-flow.sh`.
 - `assembleRelease`, `bundleRelease`, R8, contenu DEX, `apksigner` (hôte et Termux).
 - Signature release. `KEYSTORE_FILE` non défini.
 - Annulation réelle d’un GET catalogue sur le réseau.
-- Les 1 677 tests ne portent pas sur Telecom. Les dire PASS qualifie la JVM, pas le téléphone.
+- Les 1 677 tests ne portent pas sur Telecom. Les dire PASS qualifie la JVM, pas le téléphone. Idem pour les 17 tests `PhoneCorePhysicalValidationTest`.
 - #1767 n’a pas été recompilée dans cette session. Son code a été lu. Ses anciens comptages (1 676 tests) ne sont pas repris comme résultat d’aujourd’hui.
 
 ## 8. Plan de correction
