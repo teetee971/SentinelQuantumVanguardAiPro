@@ -62,6 +62,33 @@ class CallRuleEngineTest {
         assertNull(CallRuleEngine.normalizePrefix("1"))
     }
 
+    @Test fun frenchCountryCodeDigitsWithoutPlusMatchTheSameE164Identity() {
+        assertEquals("+33612345678", CallRuleEngine.normalizeNumber("33612345678"))
+        assertEquals("+590690123456", CallRuleEngine.normalizeNumber("590690123456"))
+        assertEquals("+594694123456", CallRuleEngine.normalizeNumber("594694123456"))
+        assertEquals("+596696123456", CallRuleEngine.normalizeNumber("596696123456"))
+        assertEquals("+262692123456", CallRuleEngine.normalizeNumber("262692123456"))
+        assertEquals("+508410974", CallRuleEngine.normalizeNumber("508410974"))
+        assertEquals("+590690123456", CallRuleEngine.normalizeNumber("33690123456"))
+        assertEquals("+33612", CallRuleEngine.normalizePrefix("33612"))
+        assertEquals("+590", CallRuleEngine.normalizePrefix("590"))
+        assertEquals("+508", CallRuleEngine.normalizePrefix("508"))
+        val blocked = CallRuleEngine(blockedPrefixes = setOf("+33612"))
+        assertEquals(CallRuleEngine.Action.BLOCK, blocked.evaluate("33612345678").action)
+        val contact = CallRuleEngine(
+            silenceOutsideDirectory = true,
+            directoryReady = true,
+            directoryContains = { it == "+33612345678" }
+        )
+        assertEquals(CallRuleEngine.Action.ALLOW, contact.evaluate("33612345678").action)
+        assertEquals("IN_DIRECTORY", contact.evaluate("33612345678").reason)
+        assertEquals(
+            "33612345678",
+            CallRuleEngine.normalizeNumber("33612345678", homeRegion = "BE")
+        )
+        assertNull(CallRuleEngine.normalizeNumber("0612345678", homeRegion = "BE"))
+    }
+
     @Test fun unknownValidNumberIsAllowed() {
         assertEquals(CallRuleEngine.Action.ALLOW, CallRuleEngine().evaluate("+33 6 12 34 56 78").action)
     }

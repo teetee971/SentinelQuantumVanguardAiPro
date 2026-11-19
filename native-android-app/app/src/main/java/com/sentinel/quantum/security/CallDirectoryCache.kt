@@ -2,12 +2,11 @@ package com.sentinel.quantum.security
 
 import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
 import android.database.ContentObserver
 import android.os.Handler
 import android.os.Looper
 import android.provider.ContactsContract
-import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -112,10 +111,10 @@ internal object CallDirectoryCache {
     }
 
     private fun contactsPermissionGranted(context: Context): Boolean =
-        ContextCompat.checkSelfPermission(
+        PermissionChecker.checkSelfPermission(
             context.applicationContext,
             Manifest.permission.READ_CONTACTS
-        ) == PackageManager.PERMISSION_GRANTED
+        ) == PermissionChecker.PERMISSION_GRANTED
 
     private fun loadNumbers(context: Context): Load {
         val numbers = LinkedHashSet<String>()

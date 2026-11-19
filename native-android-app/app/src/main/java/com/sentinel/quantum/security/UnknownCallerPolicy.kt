@@ -3,6 +3,11 @@ package com.sentinel.quantum.security
 /**
  * Deterministic local policy for optional unknown-caller protection.
  * Emergency status must be supplied from Android/platform determination.
+ *
+ * [composeScreeningDecision] applies this policy in the screening service after the
+ * emergency fail-open. Explicit blocks stay with [CallRuleEngine]. Favorite, allow-list
+ * and repeat-call exceptions apply only when the caller supplies them. The screening
+ * callback does not open those stores.
  */
 object UnknownCallerPolicy {
     enum class Action { ALLOW, SILENCE }

@@ -39,6 +39,7 @@ import com.sentinel.quantum.R
 import com.sentinel.quantum.SentinelDialerActivity
 import com.sentinel.quantum.SmsComposeActivity
 import com.sentinel.quantum.background.PublishedNumberCatalogScheduler
+import com.sentinel.quantum.ui.CommercialPrivacyPolicyLink
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.data.ThemeMode
 import com.sentinel.quantum.navigation.Screen
@@ -133,7 +134,13 @@ internal fun CommercialPhoneCoreSettingsScreen(
             }
             CommercialAction("Politique de confidentialité") {
                 context.openPhoneCore(
-                    Intent(Intent.ACTION_VIEW, Uri.parse("https://sentinelquantumvanguardaipro.pages.dev/public/privacy.html"))
+                    Intent(Intent.ACTION_VIEW, Uri.parse(CommercialPrivacyPolicyLink.url()))
+                )
+            }
+            if (!CommercialPrivacyPolicyLink.opensPhoneCorePolicy()) {
+                Text(
+                    "La politique Phone Core V1 n’a pas encore d’adresse HTTPS vérifiée. La page ouverte décrit la vitrine.",
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
         }

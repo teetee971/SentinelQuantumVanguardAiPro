@@ -4,6 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -66,6 +67,47 @@ class CallScreeningPolicyTest {
             CallScreeningPlatformEffect.ALLOW,
             callScreeningPlatformEffect(CallRuleEngine.Action.ALLOW, 35)
         )
+    }
+
+    @Test fun recordedDecisionMatchesTheAndroidResponse() {
+        val silence = CallRuleEngine.Decision(
+            CallRuleEngine.Action.SILENCE,
+            "NOT_IN_DIRECTORY",
+            "+33612345678",
+            CallRuleEngine.RuleSource.USER
+        )
+        val legacy = projectScreeningDecision(silence, 28)
+        assertEquals(CallRuleEngine.Action.ALLOW, legacy.action)
+        assertEquals("SILENCE_UNSUPPORTED", legacy.reason)
+        assertEquals(CallScreeningPlatformEffect.ALLOW, legacy.effect)
+        val current = projectScreeningDecision(silence, 34)
+        assertEquals(CallRuleEngine.Action.SILENCE, current.action)
+        assertEquals("NOT_IN_DIRECTORY", current.reason)
+        assertEquals(CallScreeningPlatformEffect.SILENCE, current.effect)
+        val block = projectScreeningDecision(
+            silence.copy(action = CallRuleEngine.Action.BLOCK, reason = "USER_EXACT_BLOCK"),
+            24
+        )
+        assertEquals(CallRuleEngine.Action.BLOCK, block.action)
+        assertEquals("USER_EXACT_BLOCK", block.reason)
+        assertEquals(CallScreeningPlatformEffect.REJECT, block.effect)
+    }
+
+    @Test fun screeningLogUsesTheProjectedDecisionAndContactsUseTheAppOpOracle() {
+        val service = File("src/main/java/com/sentinel/quantum/security/SentinelCallScreeningService.kt").readText()
+        val projection = service.indexOf("projectScreeningDecision(")
+        val log = service.indexOf("Décision=")
+        val history = service.indexOf("CallFilterLogStore.get(appContext).recordAsync(decision)")
+        assertTrue(projection >= 0 && projection < log && log < history)
+    }
+
+    @Test fun screeningDirectoryDropsWhenAppOpsDeniesContacts() {
+        val directory = File("src/main/java/com/sentinel/quantum/security/CallDirectoryCache.kt").readText()
+        val lookup = File("src/main/java/com/sentinel/quantum/security/LocalContactLookup.kt").readText()
+        assertTrue(directory.contains("PermissionChecker.checkSelfPermission"))
+        assertTrue(lookup.contains("PermissionChecker.checkSelfPermission"))
+        assertFalse(directory.contains("ContextCompat.checkSelfPermission"))
+        assertFalse(lookup.contains("ContextCompat.checkSelfPermission"))
     }
 
     @Test fun emergencyUnknownOrTrueFailsOpen() {

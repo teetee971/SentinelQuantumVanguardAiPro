@@ -24,15 +24,21 @@ class ArcepDirectoryClient(
         val canReceiveNumbering: Boolean?, val declarationDate: String?
     )
 
-    fun lookup(raw: String): Allocation? {
+    fun lookup(raw: String, networkPermitted: () -> Boolean = { false }): Allocation? {
         val national = toFrenchNational(raw) ?: return null
-        return find(loadDirectory(), national)
+        return find(loadDirectory(networkPermitted), national)
     }
 
-    /** Downloads the official allocation copy. A rejected document is not cached and returns false. */
+    /**
+     * Downloads the official allocation copy. A rejected document is not cached and returns false.
+     * [networkPermitted] is read again after the response so a revocation during the transfer
+     * discards the body.
+     */
     @Synchronized
-    fun refreshFromNetwork(): Boolean = runCatching {
+    fun refreshFromNetwork(networkPermitted: () -> Boolean = { false }): Boolean = runCatching {
+        if (!networkPermitted()) return false
         val text = downloadText()
+        if (!networkPermitted()) return false
         val decision = PublishedCatalogPolicy.evaluate(PublishedCatalogPolicy.Kind.ARCEP, text)
         if (!decision.accepted) return false
         val parsed = parseAccepted(text) ?: return false
@@ -41,13 +47,15 @@ class ArcepDirectoryClient(
     }.getOrDefault(false)
 
     @Synchronized
-    private fun loadDirectory(): JSONObject {
+    private fun loadDirectory(networkPermitted: () -> Boolean): JSONObject {
         cachedDirectory?.let { return it }
         readStored()?.let {
             cachedDirectory = it
             return it
         }
+        if (!networkPermitted()) throw CatalogNetworkDisabled()
         val text = downloadText()
+        if (!networkPermitted()) throw CatalogNetworkDisabled()
         val parsed = parseAccepted(text) ?: throw IllegalStateException("ARCEP_SCHEMA")
         cachedDirectory = parsed
         PublishedNumberCatalogStore.commit(PublishedCatalogPolicy.Kind.ARCEP, text)
@@ -59,6 +67,11 @@ class ArcepDirectoryClient(
         return parseAccepted(text)
     }
 
+    /**
+     * Synchronous GET. A revocation is observed before the call and after the body returns.
+     * The in-flight call itself is not cancelled: turning the switch off does not abort bytes
+     * already on the wire. Those bytes are discarded and are not stored.
+     */
     private fun downloadText(): String {
         val request = Request.Builder().url(DIRECTORY_URL).header("Accept", "application/json").get().build()
         client.newCall(request).execute().use { response ->
