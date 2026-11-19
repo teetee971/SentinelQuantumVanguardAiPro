@@ -83,7 +83,7 @@ class SentinelCallScreeningService : CallScreeningService() {
             // The permission check below does not query ContactsContract.
             val snapshot = CallBlocklistStore.cachedSnapshotForScreening()
             val directory = CallDirectoryCache.currentForScreening(this)
-            ScreeningLineRegionPolicy.decide(ScreeningHomeRegion.installedRegions()) { home ->
+            val ruled = ScreeningLineRegionPolicy.decide(ScreeningHomeRegion.installedRegions()) { home ->
                 CallRuleEngine(
                     snapshot.blockedNumberHashes,
                     snapshot.effectiveBlockedPrefixes,
@@ -102,6 +102,20 @@ class SentinelCallScreeningService : CallScreeningService() {
                     }
                 ).evaluate(rawCallerNumber)
             }
+            val normalized = ruled.normalizedNumber
+            composeScreeningDecision(
+                ruled,
+                UnknownCallerPolicy.Context(
+                    modeEnabled = snapshot.silenceOutsideDirectory && directory.ready,
+                    platformEmergency = emergency == true,
+                    inContacts = directory.ready &&
+                        !normalized.isNullOrBlank() &&
+                        directory.numbers.contains(normalized),
+                    favorite = false,
+                    explicitlyAllowed = false,
+                    repeatCall = false
+                )
+            )
         }.getOrElse {
             // The platform response must not depend on local rule storage remaining healthy.
             responseBoundary.deliverResponse {

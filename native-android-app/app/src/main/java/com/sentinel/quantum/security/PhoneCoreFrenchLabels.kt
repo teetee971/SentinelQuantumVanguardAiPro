@@ -42,6 +42,13 @@ object PhoneCoreFrenchLabels {
         "USER_PREMIUM_SILENCE" -> "Numéro surtaxé mis en silencieux par choix"
         "NEAR_DIRECTORY_CONTACT" -> "Proche d’un contact, mis en silencieux par choix"
         "NOT_IN_DIRECTORY" -> "Numéro absent du répertoire, mis en silencieux par choix"
+        "UNKNOWN_CALLER" -> "Numéro inconnu mis en silencieux par choix"
+        "FAVORITE" -> "Favori ; l’appel sonne"
+        "ALLOWLIST" -> "Numéro explicitement autorisé"
+        "REPEAT_CALL" -> "Rappel ; l’appel sonne"
+        "CONTACT" -> "Numéro présent dans les contacts"
+        "EMERGENCY" -> "Numéro d’urgence ; l’appel sonne"
+        "MODE_DISABLED" -> "Filtrage des inconnus désactivé"
         "NONE", "UNKNOWN", "" -> "Motif indéterminé"
         else -> "Motif technique non traduit"
     }
