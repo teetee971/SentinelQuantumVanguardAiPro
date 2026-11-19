@@ -1,8 +1,8 @@
-# Audit Phone Core V1 — 18 novembre 2026
+# Audit Phone Core V1 — 18–19 novembre 2026
 
 Verdict : **V1 COMMERCIAL NO-GO**.
 
-Lecture seule. Aucun correctif de code. Aucune fusion. `main`, les cycles C9, C10, C11 et les branches des PR #1767, #1768 et #1769 n’ont pas été modifiés. Les tests JVM ne qualifient ni un appel, ni un SMS, ni un MMS, ni un Galaxy S24+ SM-S926B. Cette machine n’a pas d’appareil.
+Lecture seule. Aucun correctif de code. Aucune fusion. `main`, les cycles C9, C10, C11 et les branches des PR #1767, #1768 et #1769 n’ont pas été modifiés. Les tests JVM ne qualifient ni un appel, ni un SMS, ni un MMS. La machine cloud n’a pas d’appareil. Une observation Termux / ADB sans fil sur un Galaxy S24+ SM-S926B a été faite le 19 novembre 2026 (§6) : rôles et certificat seulement. Aucun appel ni SMS ni MMS opérateur n’a été exercé. Le verdict reste NO-GO.
 
 ## 1. Têtes examinées
 
@@ -30,7 +30,7 @@ Sévérité : P0 bloque une distribution commerciale. P1 casse une fonction prom
 | ID | Gravité | Fichier:ligne | Description | Impact | Preuve | Correctif proposé | Test à écrire |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | F-01 | P0 | `CommercialPrivacyPolicyLink.kt:13-17` | `VERIFIED_V1_URL` est nul. `url()` ouvre `SHOWCASE_URL`, la politique de vitrine. | Le bouton des réglages V1 n’ouvre pas une politique Phone Core publiée. Play reste bloqué sur ce point. | Constante nulle, commentaire des lignes 6-9 : ne pas inventer d’URL. | Publier le texte V1, vérifier par GET HTTPS, puis seulement renseigner la constante. | Test qui échoue tant que l’URL est nulle, puis vérifie le corps distinct de la vitrine. |
-| F-02 | P0 | `app/build.gradle:40-44` et `:122-127` | Aucun keystore release. `KEYSTORE_FILE` est absent de l’environnement. Cette VM n’a pas de `debug.keystore`. | Impossible de produire l’AAB Play. Une reconstruction debug créerait un certificat nouveau, incompatible avec l’installation de laboratoire. | Le dépôt ne contient aucun `.jks`. Le seul digest debug archivé est `0d5e03ce9117817a0cfe55f2db1368f949218508abe34edf31a013cddde67275` (`audit/cycle11/C11_LOCAL_EVIDENCE.log:426`). Le cycle 6 prévient qu’un autre environnement peut signer autrement. | Keystore release hors git. Un seul certificat debug épinglé pour le S24 de recette. | `apksigner verify --print-certs` sur l’AAB, digest différent du debug. Non exécuté ici. |
+| F-02 | P0 | `app/build.gradle:40-44` et `:122-127` | Aucun keystore release. `KEYSTORE_FILE` est absent de l’environnement. Cette VM n’a pas de `debug.keystore`. | Impossible de produire l’AAB Play. Une reconstruction debug créerait un certificat nouveau, incompatible avec l’installation de laboratoire. | Le dépôt ne contient aucun `.jks`. Digest labo archivé `0d5e03ce…` (`audit/cycle11/C11_LOCAL_EVIDENCE.log:426`). Sur le S24+ du 19 nov. 2026, l’APK installé porte `68915958…`, identique à `iacapture`, différent du labo (§6). | Keystore release hors git. Épingler le digest réellement installé sur le S24 de recette. | `apksigner verify --print-certs` sur l’AAB, digest différent du debug. Non exécuté ici. |
 | F-03 | P0 | `SentinelApplication.kt:24-30` et `:48-50` ; `CallNumberFingerprinter.kt:32-47` ; `CallBlocklistStore.kt:436-445` | `onCreate` ne précharge rien. Le callback ne lit que le snapshot mémoire, vide au démarrage à froid. `cachedCandidates` n’ouvre pas le Keystore et ne génère pas de clé. | Après la mort du processus, le premier appel sonne même si un numéro est bloqué. Les règles ne s’appliquent qu’après une activité ou après le travail post-réponse. | Commentaire explicite lignes 24-30. #1767 ajoute `ScreeningProcessWarmup` (`CALLBACK_WAIT_BUDGET_MS = 250`) dans `SentinelApplication.kt:50` et `SentinelCallScreeningService.kt:22-24` et `:80` de `5a6f7014`. Ces fichiers sont absents de `6de5a272`. | Reprendre le préchargement de #1767, hors du callback, budget 250 ms, sans générer de clé. | Test : snapshot vide avant `await`, règles présentes après, aucun accès disque dans `awaitForScreening`. |
 | F-04 | P1 | `CallRuleEngine.kt:194-202` | Un numéro de chiffres sans `+` ni `00` tombe dans `else -> digits`. `33612345678` ne devient pas `+33612345678`. | Un blocage ou un contact enregistré en E.164 rate l’appel présenté sans le signe plus. | Branche `else` ligne 201. #1767 ajoute `promoteUnprefixedFrenchNumber` aux lignes 314-322 de sa copie, longueurs exactes 33/590/594/596/262/508. | Porter cette promotion, limitée aux longueurs complètes et à une région française. | `33612345678` et `+33612345678` produisent la même identité. `447911123456` ne devient pas français. |
 | F-05 | P1 | `ScreeningHomeRegion.kt:16-29` ; `CallDirectoryCache.kt:80` | Une seule `simCountryIso`. Défaut `"FR"` tant que `capture` n’a pas tourné. `capture` n’est appelé que pendant le rafraîchissement du répertoire. | Double SIM, ou SIM non française avant le premier rafraîchissement : le national est plié sur le plan français. Android ne donne pas la ligne dans `Call.Details`. | Lecture unique lignes 23-29. #1767 lit les abonnements dans `readSimRegions` (lignes 54-70) et, si deux parses divergent, laisse sonner (`ScreeningLineRegionPolicy.kt:19-33`), sauf si toutes les parses sont `BLOCK` (ligne 25). | Porter la capture hors callback. Si deux pays divergent, sonner et le dire. Ne pas inventer la ligne. | Deux ISO distincts, deux E.164 valides, actions différentes : `ALLOW` / `AMBIGUOUS_LINE`. |
@@ -127,30 +127,62 @@ Porte d’émulation, sur l’arbre de travail, sur `113862500` et sur `5a6f7014
 
 Code de sortie 1. Aucun émulateur n’a été démarré.
 
-## 6. Non exécuté
+## 6. Observation physique S24+ (Termux / ADB sans fil) — 19 novembre 2026
 
-- Galaxy S24+ SM-S926B, tout appareil, tout émulateur, ADB.
-- Appel entrant ou sortant, SMS, MMS, accusé opérateur, double SIM réelle, rôle accordé ou retiré par l’utilisateur.
-- `connectedDebugAndroidTest`, flux `scripts/phone-core-emulator-flow.sh`, rôle `dumpsys`.
-- `assembleRelease`, `bundleRelease`, R8, contenu DEX, `apksigner`.
+Environnement : Termux sur le S24+ lui-même, ADB sans fil `192.168.1.16:39173`, répertoire `~/sentinel-cycle11-s24-validation`. Pas de second téléphone. Pas d’émulateur sur l’appareil. Rebuild Gradle sur l’appareil : échec KSP sous PRoot (`libm.so: invalid ELF header`). `apksigner` Termux : abort `ProtoLogNative`. Digest certificat lu par parsing Python du bloc APK Signature Scheme v2/v3.
+
+| Élément | Valeur observée |
+| --- | --- |
+| Modèle | `SM-S926B` (`getprop ro.product.model`) |
+| API / build | Android 17, API 37 (dumpsys / Developer Options) |
+| Paquet V1 | `com.sentinel.quantum.v1validation` |
+| Version | `versionName` `1.0.9-v1-validation`, `versionCode` 10 |
+| Digest SHA-256 cert. installé V1 | `68915958f2f8683afead51cc3a1e578d182df4b9d9b2505c48c261b1a17b3fe2` |
+| Digest `com.sentinel.quantum.iacapture` | Identique à V1 (`same_as_v1 True`) |
+| Digest labo archivé C11 `0d5e03ce…` | Différent (`same_as_labo False`) — confirme F-02 |
+| `ROLE_DIALER` après réglages utilisateur | `com.sentinel.quantum.v1validation` (avant : `iacapture`) |
+| `ROLE_SMS` | `com.sentinel.quantum.v1validation` |
+| `ROLE_CALL_SCREENING` | `com.sentinel.quantum.v1validation` |
+| Après `am force-stop` + `pidof` | `process_absent_ok` ; les trois rôles restent sur `v1validation` |
+
+Commandes de clôture (sorties collées par l’opérateur) :
+
+```text
+adb -s 192.168.1.16:39173 shell am force-stop com.sentinel.quantum.v1validation
+adb -s 192.168.1.16:39173 shell pidof com.sentinel.quantum.v1validation || echo process_absent_ok
+→ process_absent_ok
+adb … get-role-holders … DIALER        → com.sentinel.quantum.v1validation
+adb … get-role-holders … SMS           → com.sentinel.quantum.v1validation
+adb … get-role-holders … CALL_SCREENING → com.sentinel.quantum.v1validation
+```
+
+Ce que cette observation **prouve** : le binaire installé est bien le paquet de recette V1 ; l’utilisateur peut lui donner les trois rôles ; les rôles survivent à la mort du processus ; le certificat installé n’est pas celui du labo C11 archivé.
+
+Ce que cette observation **ne prouve pas** : `onScreenCall`, fail-open à froid sur un vrai appel, silence / blocage, composeur entrant, SMS / MMS opérateur, retrait de rôle en cours de session, double SIM, écran verrouillé. Sans seconde ligne, ces points restent NON EXÉCUTÉS. Le verdict commercial ne bouge pas.
+
+## 7. Non exécuté
+
+- Appel entrant ou sortant réel, SMS, MMS, accusé opérateur, double SIM réelle, retrait de rôle pendant un appel / un envoi.
+- Tout émulateur, `connectedDebugAndroidTest`, flux `scripts/phone-core-emulator-flow.sh`.
+- `assembleRelease`, `bundleRelease`, R8, contenu DEX, `apksigner` (hôte et Termux).
 - Signature release. `KEYSTORE_FILE` non défini.
 - Annulation réelle d’un GET catalogue sur le réseau.
 - Les 1 677 tests ne portent pas sur Telecom. Les dire PASS qualifie la JVM, pas le téléphone.
 - #1767 n’a pas été recompilée dans cette session. Son code a été lu. Ses anciens comptages (1 676 tests) ne sont pas repris comme résultat d’aujourd’hui.
 
-## 7. Plan de correction
+## 8. Plan de correction
 
 1. Ne pas merger vers `main`. Fusionner textuellement #1767 dans la pile #1769, puis rejouer les trois tâches Gradle et les deux manifestes. Le résultat JVM ne change pas le NO-GO.
 2. Publier la politique V1 et ne renseigner `VERIFIED_V1_URL` qu’après un GET qui renvoie ce texte.
-3. Déposer le keystore release dans le canal secret. Épingler le certificat debug du S24 avant toute réinstallation.
+3. Déposer le keystore release dans le canal secret. Épingler le digest installé sur ce S24 (`68915958…`) avant toute réinstallation ; ne plus traiter `0d5e03ce…` comme le seul certificat de recette sans inventaire.
 4. Retirer LiveKit, Auth0, WireGuard, Wear et audioswitch du classpath V1. Étendre `check_merged_manifest.py` à `MODIFY_AUDIO_SETTINGS` et à la requête `BROWSABLE`.
 5. Aligner la porte d’émulation sur `screeningMustFailOpen(emergency)`.
 6. Région capturée pour l’enrôlement, le répertoire et `blockMatchInputs`. Promotion E.164 limitée aux numéros français complets.
 7. Brancher ou supprimer `UnknownCallerPolicy`. Traduire `IN_DIRECTORY` et `USER_PREFIX_SILENCE`.
 8. Arrêter la réparation SMS quand le rôle disparaît.
-9. Seulement ensuite : protocole S24+ (rôles, appel, SMS, MMS, retrait de rôle, double SIM, écran verrouillé). Sans cet appareil, le statut reste NO-GO.
+9. Ensuite seulement : protocole S24+ restant (appel, SMS, MMS, retrait de rôle, double SIM, écran verrouillé, fail-open à froid). Les rôles sont déjà posés ; l’absence de seconde ligne bloque encore ces preuves. Sans elles, le statut reste NO-GO.
 
-## 8. Pistes réalistes
+## 9. Pistes réalistes
 
 Ces pistes découlent du code lu. Aucune n’est implémentée par cet audit.
 
