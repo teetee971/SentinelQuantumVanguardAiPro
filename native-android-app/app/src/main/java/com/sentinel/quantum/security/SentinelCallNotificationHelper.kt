@@ -110,7 +110,8 @@ object SentinelCallNotificationHelper {
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setCategory(NotificationCompat.CATEGORY_CALL)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .setPublicVersion(publicLockScreenNotification(context, incoming, snapshot))
             .setPriority(if (incoming) NotificationCompat.PRIORITY_MAX else NotificationCompat.PRIORITY_DEFAULT)
             .setOngoing(true)
             .setAutoCancel(false)
@@ -132,6 +133,26 @@ object SentinelCallNotificationHelper {
         }.getOrDefault(false)
     }
 
+    /** Lock-screen notification. No CallStyle and no caller identity. */
+    private fun publicLockScreenNotification(
+        context: Context,
+        incoming: Boolean,
+        snapshot: SentinelInCallService.CallSnapshot
+    ): Notification {
+        val text = IncomingCallLockScreen.publicText(
+            incoming,
+            snapshot.displayName,
+            snapshot.handle
+        )
+        return NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(text)
+            .setContentText(text)
+            .setCategory(NotificationCompat.CATEGORY_CALL)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .build()
+    }
+
     fun cancel(context: Context) {
         alertPolicy.clear()
         NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
@@ -148,7 +169,7 @@ object SentinelCallNotificationHelper {
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Interface d’appel entrant du composeur Sentinel"
-                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+                lockscreenVisibility = Notification.VISIBILITY_PRIVATE
                 setSound(null, null)
                 enableVibration(false)
             }

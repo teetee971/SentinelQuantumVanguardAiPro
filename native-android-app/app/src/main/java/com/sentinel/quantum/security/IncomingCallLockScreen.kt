@@ -10,10 +10,9 @@ internal object IncomingCallLockScreen {
     const val MASKED_INCOMING = "Appel entrant"
     const val MASKED_ONGOING = "Appel en cours"
 
-    fun publicText(incoming: Boolean, displayName: String?, handle: String?): String {
-        val label = displayName?.takeIf { it.isNotBlank() }
-            ?: handle?.takeIf { it.isNotBlank() }
-            ?: if (incoming) MASKED_INCOMING else MASKED_ONGOING
-        return label
-    }
+    fun publicText(
+        incoming: Boolean,
+        @Suppress("UNUSED_PARAMETER") displayName: String?,
+        @Suppress("UNUSED_PARAMETER") handle: String?
+    ): String = if (incoming) MASKED_INCOMING else MASKED_ONGOING
 }
