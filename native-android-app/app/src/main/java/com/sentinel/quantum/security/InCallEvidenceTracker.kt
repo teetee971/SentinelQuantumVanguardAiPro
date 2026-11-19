@@ -124,9 +124,18 @@ internal object InCallActivityLaunchPolicy {
         INCOMING_NOTIFICATION_FALLBACK
     }
 
-    fun shouldRequest(trigger: Trigger, hasActiveCall: Boolean, outgoingCall: Boolean = false): Boolean =
-        hasActiveCall && (trigger == Trigger.TELECOM_BRING_TO_FOREGROUND ||
+    fun shouldRequest(
+        trigger: Trigger,
+        hasActiveCall: Boolean,
+        outgoingCall: Boolean = false,
+        notificationPermissionGranted: Boolean = true
+    ): Boolean {
+        if (!notificationPermissionGranted && trigger == Trigger.INCOMING_NOTIFICATION_FALLBACK) {
+            return false
+        }
+        return hasActiveCall && (trigger == Trigger.TELECOM_BRING_TO_FOREGROUND ||
             (trigger == Trigger.CALL_ADDED && outgoingCall))
+    }
 }
 
 internal enum class InCallActivityLaunchResult { NOT_REQUESTED, REQUESTED, FAILED }
