@@ -183,7 +183,7 @@ Aucun de ces tests n’a été exécuté dans cette phase. Aucun résultat PASS 
 | `cursor/v1-p0-privacy-catalog-c39e`, `cursor/v1-play-compliance-20261118-c39e`, `cursor/v1-call-screening-audit-536d`, `cursor/v1-phone-core-full-audit-20261118` | Descendent de la ligne integration. Non extraites. Le diff integration→`6de5a272` ne touche pas les fichiers OSINT listés. |
 | Branches `automation/cisa-kev-refresh-*` et `automation/vulnerability-watch-*` | Pointes d’automation. Contenu non lu. |
 | `integration/d1-visual-phonecore-20261029` | Absente des branches distantes de ce clone. |
-| `fix/v1-phone-core-p1-20261119` | Absente du remote après `git fetch`. |
+| `fix/v1-phone-core-p1-20261119` | Présente au 2026-11-25 (`f036b2b79372`, 22 commits devant integration). Non extraite et non modifiée. |
 
 ## 11. Ce qui n’a pas été vérifié
 

@@ -44,10 +44,21 @@ La catégorie 10 reste vide : aucune modification n’a été prouvée par une e
 - Histoire de `main` (4 034 commits, racine `d777c0a7`) et histoire de la ligne integration (racine `07392da4`, 42 commits jusqu’à `6de5a272`) disjointes. Le diff d’arbres `main` / `6de5a272` est de 783 fichiers. Il n’a pas été relu fichier par fichier.
 - CI : aucune requête check-runs, pour ne pas lancer de workflow. Colonne CI = non consultée.
 - Clone local utilisateur `integration/d1-visual-phonecore-20261029` inaccessible. Fichiers non suivis signalés et non lus : `app/schemas/`, `ui/design/SentinelEvidenceGraph.kt`, `SentinelHolographicScene.kt`, `SentinelQuantumCore.kt`, `SentinelReferencePanels.kt`, `SentinelVoiceVisualizer.kt`. Non classés absents.
-- `fix/v1-phone-core-p1-20261119` absente du remote après fetch.
+- `fix/v1-phone-core-p1-20261119` est présente au 2026-11-25. Elle n’a pas été extraite.
 - Branches des PR #1767, #1768, #1769 et #1771 non extraites.
 - Pas de phases suivantes (défauts cachés, corrections, validation).
 
 ## Chiffres de lecture
 
-Les totaux exacts de branches et de PR sont dans l’inventaire, figés au moment de sa génération. Catégorie 10 : 0.
+Figés dans [INVENTAIRE_BRANCHES_PR.md](INVENTAIRE_BRANCHES_PR.md) le 2026-11-25.
+
+| Objet | Nombre |
+| --- | ---: |
+| Branches distantes | 1 150 |
+| PR ouvertes | 107, dont 72 brouillons |
+| PR fermées lues | 100 |
+| Divergentes vis-à-vis de `main` | 747 |
+| Histoires disjointes de `main` | 48 |
+| Catégorie primaire 1 / 2 / 3 / 4 / 5 / 6 | 3 / 10 / 1 / 1 / 0 / 1 |
+| Catégories 7, 8, 9 en primaire | 0 (elles apparaissent en catégories secondaires) |
+| Catégorie 10 | 0 |
