@@ -129,6 +129,18 @@ class V25DataPreservationTest {
         )
     }
 
+    @Test fun instrumentationDeletesOnlyTheValidationPackageDatabase() {
+        val source = File(
+            "src/androidTest/java/com/sentinel/quantum/security/V25RoomIdentityUpgradeInstrumentationTest.kt"
+        ).readText()
+        val guard = source.indexOf("REFUSING_TO_TOUCH_INSTALLED_V25_PACKAGE")
+        val deletion = source.indexOf("deleteDatabase(")
+        assertTrue(guard >= 0)
+        assertTrue(deletion > guard)
+        assertTrue(source.contains("com.sentinel.quantum.v1validation"))
+        assertFalse(source.contains("fallbackToDestructiveMigration"))
+    }
+
     @Test fun reputationPurgeRemovesCacheEntriesOnly() {
         val selected = CommunicationReputationPurge.keysToRemove(
             setOf(

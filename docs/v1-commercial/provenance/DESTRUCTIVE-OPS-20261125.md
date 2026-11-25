@@ -6,7 +6,9 @@ Statut : **NO-GO**. Ce document ne qualifie pas une mise à niveau V25. Aucune b
 
 `SentinelLocalDatabase.openPreserving` lit `room_master_table` et `user_version` en `OPEN_READONLY` avant `Room.databaseBuilder`. `allowOpen` refuse un fichier présent illisible, une identité différente de `21617aeab12bfb29ee9bec17bc238d62`, ou une version autre que 1. Le refus lance `DESTRUCTIVE_MIGRATION_FORBIDDEN` et ne supprime pas le fichier.
 
-`fallbackToDestructiveMigration` est absent du source de production. `deleteDatabase` n'apparaît que dans le test d'instrumentation, qui efface sa propre base synthétique avant de la créer.
+`fallbackToDestructiveMigration` est absent du source de production. `deleteDatabase` n'apparaît que dans le test d'instrumentation. Ce test s'arrête avant l'effacement si le paquet n'est pas `com.sentinel.quantum.v1validation`, puis n'efface que la base de ce paquet de recette. Sans le suffixe, le paquet debug est `com.sentinel.quantum`, le même que la V25 installée : le lancer sur le S24+ détruirait `sentinel-local.db`. Le test compile, il n'a pas été exécuté. Il n'y a ni image système ARM64 ni `/dev/kvm` ici.
+
+SQLite 3.40.1, hors Android, a relu une base WAL synthétique en `mode=ro` tant que le répertoire était inscriptible. Ce n'est pas `SQLiteDatabase.OPEN_READONLY` sur le téléphone, et cela ne qualifie pas la sonde.
 
 `CallFilterDecisionDao.clear()` supprime toutes les décisions. Le seul appelant est la confirmation explicite de `CallFilterHistoryScreen`. `prune(500)` s'exécute après un nouvel enregistrement et ne concerne pas les 29 lignes tant que l'historique reste sous le plafond. Aucun des deux n'est appelé depuis `SentinelApplication.onCreate`.
 

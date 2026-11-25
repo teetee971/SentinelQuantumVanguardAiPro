@@ -5,18 +5,25 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
  * Opens a pre-existing Room file that already carries the V25 identity and 29 synthetic rows.
- * No phone number, name, or message body is written.
+ * Refuses every package other than com.sentinel.quantum.v1validation before deleting anything.
+ * No phone number, name, or message body is written. Not a substitute for an ARM64 run.
  */
 @RunWith(AndroidJUnit4::class)
 class V25RoomIdentityUpgradeInstrumentationTest {
     @Test
     fun twentyNineSyntheticDecisionsSurviveOpenOfTheBundledIdentity() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val packageName = context.packageName
+        check(packageName == VALIDATION_PACKAGE) {
+            "REFUSING_TO_TOUCH_INSTALLED_V25_PACKAGE $packageName"
+        }
+        dropCachedDatabase()
         context.deleteDatabase(DATABASE_NAME)
         val path = context.getDatabasePath(DATABASE_NAME)
         path.parentFile?.mkdirs()
@@ -53,10 +60,31 @@ class V25RoomIdentityUpgradeInstrumentationTest {
         assertEquals(ROW_COUNT, rows.size)
         assertEquals("fp-1", rows.last().numberFingerprint)
         assertEquals("fp-$ROW_COUNT", rows.first().numberFingerprint)
+        assertTrue(path.isFile)
+        SQLiteDatabase.openDatabase(path.absolutePath, null, SQLiteDatabase.OPEN_READONLY).use { database ->
+            val identity = database.rawQuery(
+                "SELECT identity_hash FROM room_master_table WHERE id = 42",
+                null
+            ).use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                cursor.getString(0)
+            }
+            assertEquals(IDENTITY, identity)
+            assertEquals(1, database.version)
+        }
+    }
+
+    private fun dropCachedDatabase() {
+        val field = SentinelLocalDatabase::class.java.getDeclaredField("instance")
+        field.isAccessible = true
+        val existing = field.get(null) as? SentinelLocalDatabase
+        field.set(null, null)
+        existing?.close()
     }
 
     private companion object {
         const val DATABASE_NAME = "sentinel-local.db"
+        const val VALIDATION_PACKAGE = "com.sentinel.quantum.v1validation"
         const val IDENTITY = SentinelLocalDatabasePreservation.IDENTITY_HASH
         const val ROW_COUNT = SentinelLocalDatabasePreservation.V25_DECISION_ROWS
     }
