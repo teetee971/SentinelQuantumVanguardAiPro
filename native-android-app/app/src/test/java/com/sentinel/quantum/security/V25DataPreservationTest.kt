@@ -129,6 +129,23 @@ class V25DataPreservationTest {
         )
     }
 
+    @Test fun instrumentationMayStartOnlyForRecetteOrASyntheticFixture() {
+        val installed = SentinelLocalDatabasePreservation.INSTALLED_PACKAGE
+        val recette = SentinelLocalDatabasePreservation.VALIDATION_PACKAGE
+        assertTrue(SentinelLocalDatabasePreservation.instrumentationMayStart(recette, true, false))
+        assertTrue(SentinelLocalDatabasePreservation.instrumentationMayStart(installed, false, null))
+        assertTrue(SentinelLocalDatabasePreservation.instrumentationMayStart(installed, true, true))
+        assertFalse(SentinelLocalDatabasePreservation.instrumentationMayStart(installed, true, false))
+        assertFalse(SentinelLocalDatabasePreservation.instrumentationMayStart(installed, true, null))
+        assertFalse(SentinelLocalDatabasePreservation.instrumentationMayStart("com.sentinel.quantum.debug", false, null))
+        val gradle = File("build.gradle").readText()
+        assertTrue(gradle.contains("com.sentinel.quantum.security.SentinelPreservationInstrumentationRunner"))
+        val guard = File("src/androidTest/java/com/sentinel/quantum/security/InstalledDataGuard.kt").readText()
+        assertTrue(guard.contains("SQLiteDatabase.OPEN_READONLY"))
+        assertTrue(guard.contains("REFUSING_TO_TOUCH_INSTALLED_V25_PACKAGE"))
+        assertFalse(guard.contains("deleteDatabase"))
+    }
+
     @Test fun instrumentationDeletesOnlyTheValidationPackageDatabase() {
         val source = File(
             "src/androidTest/java/com/sentinel/quantum/security/V25RoomIdentityUpgradeInstrumentationTest.kt"

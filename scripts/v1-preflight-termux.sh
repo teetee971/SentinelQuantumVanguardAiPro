@@ -151,7 +151,8 @@ fi
 
 say "--- instrumentation must not touch the installed package ---"
 inst="native-android-app/app/src/androidTest/java/com/sentinel/quantum/security/V25RoomIdentityUpgradeInstrumentationTest.kt"
-if [ -f "$inst" ] && grep -q "REFUSING_TO_TOUCH_INSTALLED_V25_PACKAGE" "$inst"; then
+if [ -f "$inst" ] && grep -q "REFUSING_TO_TOUCH_INSTALLED_V25_PACKAGE" "$inst" \
+  && grep -q "SentinelPreservationInstrumentationRunner" native-android-app/app/build.gradle; then
   say "instrumentation_package_guard=present"
 else
   say "BLOCK the synthetic Room test can delete sentinel-local.db. Refuse unless the package is com.sentinel.quantum.v1validation."

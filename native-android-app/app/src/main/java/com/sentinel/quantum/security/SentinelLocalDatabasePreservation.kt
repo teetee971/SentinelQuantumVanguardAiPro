@@ -8,6 +8,25 @@ internal object SentinelLocalDatabasePreservation {
     const val IDENTITY_HASH = "21617aeab12bfb29ee9bec17bc238d62"
     const val SCHEMA_VERSION = 1
     const val V25_DECISION_ROWS = 29
+    const val INSTALLED_PACKAGE = "com.sentinel.quantum"
+    const val VALIDATION_PACKAGE = "com.sentinel.quantum.v1validation"
+
+    /**
+     * Instrumentation may start on the side-by-side recette package, or on a
+     * throwaway install that does not already have a database. An existing
+     * database on the installed package is allowed only when every row is the
+     * synthetic fixture. Unreadable is refused. This does not delete anything.
+     */
+    fun instrumentationMayStart(
+        packageName: String,
+        databaseFilePresent: Boolean,
+        syntheticFixture: Boolean?
+    ): Boolean {
+        if (packageName == VALIDATION_PACKAGE) return true
+        if (packageName != INSTALLED_PACKAGE) return false
+        if (!databaseFilePresent) return true
+        return syntheticFixture == true
+    }
 
     data class DecisionRow(val id: Long, val occurredAtMs: Long, val action: String)
 
