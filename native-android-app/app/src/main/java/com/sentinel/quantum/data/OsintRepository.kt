@@ -120,8 +120,10 @@ class OsintRepository(private val cache: OsintFeedCache? = null) {
             .toList()
     }
 
-    suspend fun fetchAllFeedsResult(): FetchResult = withContext(Dispatchers.IO) {
-        val results = OsintSource.entries.map { fetchFeedResult(it) }
+    suspend fun fetchAllFeedsResult(
+        sources: List<OsintSource> = OsintSource.entries
+    ): FetchResult = withContext(Dispatchers.IO) {
+        val results = sources.map { fetchFeedResult(it) }
         val items = results.flatMap { it.items }.sortedByDescending { it.pubDate }
         FetchResult(items, results.count { it.succeeded }, results.size)
     }

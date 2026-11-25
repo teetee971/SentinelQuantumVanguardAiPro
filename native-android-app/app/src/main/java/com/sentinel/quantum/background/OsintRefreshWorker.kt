@@ -6,6 +6,7 @@ import androidx.work.WorkerParameters
 import com.sentinel.quantum.BuildConfig
 import com.sentinel.quantum.data.OsintFeedCache
 import com.sentinel.quantum.data.OsintRepository
+import com.sentinel.quantum.data.OsintRssConfig
 import com.sentinel.quantum.data.SettingsStore
 
 /**
@@ -26,7 +27,9 @@ class OsintRefreshWorker(
 
         val cachedSnapshot = cache.load()
         val fetchResult = try {
-            repository.fetchAllFeedsResult()
+            repository.fetchAllFeedsResult(
+                OsintRssConfig.fetchSources(SettingsStore(context).osintRssSourceNames())
+            )
         } catch (_: Exception) {
             null
         }

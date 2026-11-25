@@ -80,6 +80,8 @@
     <string name="settings_osint_description">Vérification optionnelle de flux publics, désactivée par défaut. Hors profil commercial V1. Non qualifiée sur appareil.</string>
     <string name="settings_osint_interval_never">Jamais</string>
     <string name="settings_osint_interval_hours">Toutes les %1$d h</string>
+    <string name="settings_osint_rss_title">Flux RSS</string>
+    <string name="settings_osint_rss_note">Chaque interrupteur ne lit que l’adresse publique déjà autorisée. Aucune donnée de fiche n’est envoyée. NVD et CISA KEV ne sont pas des flux RSS.</string>
     <string name="settings_osint_notifications">Notifications de veille OSINT</string>
     <string name="settings_osint_notifications_enabled">Notifications OSINT activées.</string>
     <string name="settings_osint_permission_denied">Permission refusée : les alertes resteront désactivées.</string>

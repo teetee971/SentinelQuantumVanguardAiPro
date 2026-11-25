@@ -23,7 +23,8 @@ import com.sentinel.quantum.data.OsintFeedCache
 import com.sentinel.quantum.data.OsintFeedItem
 import com.sentinel.quantum.data.OsintPublicationTime
 import com.sentinel.quantum.data.OsintRepository
-import com.sentinel.quantum.data.OsintSource
+import com.sentinel.quantum.data.OsintRssConfig
+import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.data.OsintTransientItemStore
 import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.ui.design.SentinelD1
@@ -62,7 +63,9 @@ fun OsintFeedScreen(navController: NavController) {
             isLoading = true
             errorMessage = null
             try {
-                val result = repository.fetchAllFeedsResult()
+                val result = repository.fetchAllFeedsResult(
+                    OsintRssConfig.fetchSources(SettingsStore(context).osintRssSourceNames())
+                )
                 when {
                     result.isComplete && result.items.isNotEmpty() -> {
                         cache.save(result.items)
@@ -219,7 +222,7 @@ fun OsintFeedScreen(navController: NavController) {
                         onClick = { selectedSource = null },
                         label = { Text(stringResource(R.string.osint_filter_all)) }
                     )
-                    OsintSource.entries.forEach { source ->
+                    OsintRssConfig.fetchSources(SettingsStore(context).osintRssSourceNames()).forEach { source ->
                         FilterChip(
                             selected = selectedSource == source.displayName,
                             onClick = {
