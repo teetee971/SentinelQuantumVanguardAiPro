@@ -25,7 +25,13 @@ internal object IncomingMmsPrivateStore {
     )
 
     @Synchronized
-    fun persist(filesDir: File, data: ByteArray, pinnedDigests: Set<String> = emptySet()): Result {
+    fun persist(
+        filesDir: File,
+        data: ByteArray,
+        pinnedDigests: Set<String> = emptySet(),
+        retainOnCommit: Boolean = false,
+        subscriptionId: Int? = null
+    ): Result {
         val digest = IncomingMmsIdentity.sha256Hex(data) ?: return failed()
         val targetName = IncomingMmsIdentity.persistedFileName(digest) ?: return failed()
         val partialName = IncomingMmsIdentity.partialFileName(digest) ?: return failed()
@@ -53,6 +59,12 @@ internal object IncomingMmsPrivateStore {
                 target.length() == data.size.toLong() &&
                 digestFile(target) == digest
             if (!matches) return failed()
+            if (
+                retainOnCommit &&
+                !IncomingMmsPrivateRetention.retain(canonicalRoot, digest, subscriptionId)
+            ) {
+                retainUntilJournaled(digest)
+            }
             return Result(State.EXISTING, digest)
         }
 
@@ -89,13 +101,18 @@ internal object IncomingMmsPrivateStore {
             return failed()
         }
 
-        // Evict only after the new bytes are durable. Pinned proofs are never victims.
-        // If pinned files already fill the cap, the new pinned file is kept and the cap
-        // is exceeded on purpose: dropping it would drop the only copy. An unpinned file
-        // that still does not fit is deleted and the call fails closed.
-        val protected = pinnedDigests.mapNotNull(IncomingMmsIdentity::persistedFileName).toSet() +
+        // Evict only after the new bytes are durable.
+        // Journal pins and the in-memory hold may exceed the cap: dropping them would drop
+        // the only in-flight copy. A private message already in the retention ledger is
+        // never a victim. The new file is kept only when a slot remains, unless it is an
+        // in-flight pin. Otherwise it is removed and the call fails closed.
+        val mustKeep = pinnedDigests.mapNotNull(IncomingMmsIdentity::persistedFileName).toSet() +
             retainedUntilJournal.mapNotNull(IncomingMmsIdentity::persistedFileName).toSet()
-        val targetIsProtected = target.name in protected || targetName in protected
+        val retained = IncomingMmsPrivateRetention.read(canonicalRoot)
+            .mapNotNull { IncomingMmsIdentity.persistedFileName(it.digest) }
+            .toSet()
+        val protected = mustKeep + retained
+        val targetIsMustKeep = target.name in mustKeep || targetName in mustKeep
         var stored = canonicalDirectory.listFiles()
             ?.filter { it.isFile && it.extension == PDU_EXTENSION }
             ?.sortedWith(compareByDescending<File> { it.lastModified() }.thenBy { it.name })
@@ -105,9 +122,12 @@ internal object IncomingMmsPrivateStore {
             if (!runCatching { victim.delete() }.getOrDefault(false)) return failed()
             stored = stored.filterNot { it == victim }
         }
-        if (stored.size > MAX_STORED_MMS && !targetIsProtected) {
+        if (stored.size > MAX_STORED_MMS && !targetIsMustKeep) {
             if (!runCatching { target.delete() }.getOrDefault(false)) return failed()
             return failed()
+        }
+        if (retainOnCommit && !IncomingMmsPrivateRetention.retain(canonicalRoot, digest, subscriptionId)) {
+            retainUntilJournaled(digest)
         }
         return Result(State.CREATED, digest)
     }
@@ -119,11 +139,18 @@ internal object IncomingMmsPrivateStore {
     fun confirmDurableCopy(
         filesDir: File,
         data: ByteArray,
-        pinnedDigests: Set<String> = emptySet()
+        pinnedDigests: Set<String> = emptySet(),
+        subscriptionId: Int? = null
     ): Result? {
         val digest = IncomingMmsIdentity.sha256Hex(data) ?: return null
         retainUntilJournaled(digest)
-        val persisted = persist(filesDir, data, pinnedDigests + digest)
+        val persisted = persist(
+            filesDir,
+            data,
+            pinnedDigests + digest,
+            retainOnCommit = true,
+            subscriptionId = subscriptionId
+        )
         if (
             (persisted.state != State.CREATED && persisted.state != State.EXISTING) ||
             persisted.digestHex != digest
@@ -131,9 +158,19 @@ internal object IncomingMmsPrivateStore {
             releaseJournaled(digest)
             return null
         }
-        val again = read(filesDir, digest) ?: return null
-        if (IncomingMmsIdentity.sha256Hex(again) != digest) return null
+        val again = read(filesDir, digest)
+        if (again == null || IncomingMmsIdentity.sha256Hex(again) != digest) {
+            releaseJournaled(digest)
+            return null
+        }
         return persisted
+    }
+
+    /** Drops both the process pin and the durable ledger once a provider row is the copy of record. */
+    @Synchronized
+    fun releaseProjected(filesDir: File, digestHex: String): Boolean {
+        releaseJournaled(digestHex)
+        return IncomingMmsPrivateRetention.release(filesDir, digestHex)
     }
 
     /** Keeps a digest that is about to be journaled from being evicted by another persist. */

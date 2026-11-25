@@ -104,9 +104,10 @@ internal object MmsDownloadRecovery {
         context: Context,
         fileName: String,
         allowQuarantine: Boolean,
-        nowMs: Long = System.currentTimeMillis()
+        nowMs: Long = System.currentTimeMillis(),
+        elapsedMs: Long = android.os.SystemClock.elapsedRealtime()
     ): Outcome = exclusively(fileName) {
-        recoverExclusive(context, fileName, allowQuarantine, nowMs)
+        recoverExclusive(context, fileName, allowQuarantine, nowMs, elapsedMs)
     }
 
     /** Serializes recovery, cleanup and the download callback for one staging name. */
@@ -124,11 +125,15 @@ internal object MmsDownloadRecovery {
         context: Context,
         fileName: String,
         allowQuarantine: Boolean,
-        nowMs: Long
+        nowMs: Long,
+        elapsedMs: Long
     ): Outcome {
         val appContext = context.applicationContext
         val journal = MmsDownloadRecoveryJournal(appContext)
-        val record = journal.read(fileName) ?: return Outcome.TERMINAL
+        val record = journal.read(fileName)
+        if (record == null) {
+            return keepUnreadableJournal(appContext, journal, fileName, elapsedMs)
+        }
         if (nowMs < 0L || record.requestedAtMs > nowMs) return Outcome.RETRY
         if (record.transportFailed) return finishTerminal(appContext, fileName, allowQuarantine)
 
@@ -141,28 +146,23 @@ internal object MmsDownloadRecovery {
             return recoverFromPrivate(appContext, journal, record, allowQuarantine, nowMs, stagingPresent = true)
         }
         if (sizeBefore <= 0L) {
-            return if (allowQuarantine) {
-                finishTerminal(appContext, fileName, fromCleanupDeadline = true)
-            } else {
-                Outcome.RETRY
-            }
+            return emptyStaging(target, elapsedMs, allowQuarantine, appContext, fileName)
         }
         if (sizeBefore > MmsDownloadCoordinator.MAX_DOWNLOADED_PDU_BYTES) {
             return finishTerminal(appContext, fileName, allowQuarantine)
         }
+        if (!stagingIsStable(target, sizeBefore, elapsedMs)) return Outcome.RETRY
 
         val modifiedBefore = target.lastModified()
-        if (modifiedBefore <= 0L || nowMs - modifiedBefore < STABLE_FILE_GRACE_MS) {
-            return Outcome.RETRY
-        }
         val data = IncomingMmsPduFileReader.read(target, sizeBefore) ?: return Outcome.RETRY
-        if (target.lastModified() != modifiedBefore) return Outcome.RETRY
+        if (target.lastModified() != modifiedBefore || target.length() != sizeBefore) return Outcome.RETRY
 
         val digest = IncomingMmsIdentity.sha256Hex(data) ?: return Outcome.RETRY
         val persistence = IncomingMmsPrivateStore.confirmDurableCopy(
             appContext.filesDir,
             data,
-            journal.pinnedDigests()
+            journal.pinnedDigests(),
+            subscriptionId = record.subscriptionId
         )
         if (persistence == null || persistence.digestHex != digest) return Outcome.RETRY
         if (
@@ -173,9 +173,14 @@ internal object MmsDownloadRecovery {
                 expectedRequestedAtMs = record.requestedAtMs
             )
         ) {
+            if (IncomingMmsPrivateRetention.contains(appContext.filesDir, digest)) {
+                IncomingMmsPrivateStore.releaseJournaled(digest)
+            }
             return Outcome.RETRY
         }
-        IncomingMmsPrivateStore.releaseJournaled(digest)
+        if (IncomingMmsPrivateRetention.contains(appContext.filesDir, digest)) {
+            IncomingMmsPrivateStore.releaseJournaled(digest)
+        }
         if (!MmsDownloadDurability.stagingDeletable(privateRereadMatches = true, journalAccepted = true)) {
             return Outcome.RETRY
         }
@@ -364,6 +369,12 @@ internal object MmsDownloadRecovery {
             )
         }
 
+        if (providerInserted || providerReplay) {
+            IncomingMmsPrivateStore.releaseProjected(appContext.filesDir, digest)
+        } else if (prepared is IncomingMmsProjectionPipeline.Result.Quarantined) {
+            IncomingMmsPrivateRetention.clearSubscription(appContext.filesDir, digest)
+        }
+
         if (!stagingPresent) {
             return if (journal.remove(fileName)) Outcome.RECOVERED else Outcome.RETRY
         }
@@ -371,6 +382,83 @@ internal object MmsDownloadRecovery {
             Outcome.RECOVERED
         } else {
             Outcome.RETRY
+        }
+    }
+
+    private fun keepUnreadableJournal(
+        appContext: Context,
+        journal: MmsDownloadRecoveryJournal,
+        fileName: String,
+        elapsedMs: Long
+    ): Outcome {
+        journal.quarantineUndecodable(fileName)
+        val target = stagedFile(appContext, fileName)
+            ?: return MmsDownloadDurability.outcomeWhenJournalUnreadable(stagingBytesPresent = false)
+        val size = target.length()
+        if (size <= 0L) return Outcome.RETRY
+        if (size > MmsDownloadCoordinator.MAX_DOWNLOADED_PDU_BYTES) {
+            return MmsDownloadDurability.outcomeWhenJournalUnreadable(stagingBytesPresent = true)
+        }
+        if (!stagingIsStable(target, size, elapsedMs)) return Outcome.RETRY
+        val modified = target.lastModified()
+        val data = IncomingMmsPduFileReader.read(target, size) ?: return Outcome.RETRY
+        if (target.lastModified() != modified || target.length() != size) return Outcome.RETRY
+        val copied = IncomingMmsPrivateStore.confirmDurableCopy(appContext.filesDir, data)
+        val digest = copied?.digestHex
+        if (copied == null || digest == null) return Outcome.RETRY
+        if (IncomingMmsPrivateRetention.contains(appContext.filesDir, digest)) {
+            IncomingMmsPrivateStore.releaseJournaled(digest)
+        }
+        return MmsDownloadDurability.outcomeWhenJournalUnreadable(stagingBytesPresent = true)
+    }
+
+    private fun emptyStaging(
+        target: File,
+        elapsedMs: Long,
+        allowQuarantine: Boolean,
+        appContext: Context,
+        fileName: String
+    ): Outcome {
+        val previous = readObservation(target)
+        val emptyLongEnough = previous != null &&
+            previous.first == 0L &&
+            elapsedMs >= previous.third &&
+            elapsedMs - previous.third >= MmsDownloadCoordinator.DOWNLOAD_TTL_MS
+        if (allowQuarantine && emptyLongEnough) {
+            return finishTerminal(appContext, fileName, fromCleanupDeadline = true)
+        }
+        writeObservation(target, 0L, target.lastModified().coerceAtLeast(0L), elapsedMs)
+        return Outcome.RETRY
+    }
+
+    private fun stagingIsStable(target: File, size: Long, elapsedMs: Long): Boolean {
+        val modifiedAtMs = target.lastModified()
+        val previous = readObservation(target)
+        val stable = MmsStagingStability.ready(
+            previousSize = previous?.first,
+            previousModifiedAtMs = previous?.second,
+            previousElapsedMs = previous?.third,
+            size = size,
+            modifiedAtMs = modifiedAtMs,
+            elapsedMs = elapsedMs
+        )
+        if (!stable) writeObservation(target, size, modifiedAtMs, elapsedMs)
+        return stable
+    }
+
+    private fun readObservation(target: File): Triple<Long, Long, Long>? {
+        val sidecar = File(target.parentFile, target.name + OBSERVATION_SUFFIX)
+        if (!sidecar.isFile) return null
+        return runCatching { MmsStagingStability.decode(sidecar.readText()) }.getOrNull()
+    }
+
+    private fun writeObservation(target: File, size: Long, modifiedAtMs: Long, elapsedMs: Long) {
+        val sidecar = File(target.parentFile, target.name + OBSERVATION_SUFFIX)
+        runCatching {
+            java.io.FileOutputStream(sidecar).use { stream ->
+                stream.write(MmsStagingStability.encode(size, modifiedAtMs, elapsedMs).toByteArray(Charsets.US_ASCII))
+                stream.fd.sync()
+            }
         }
     }
 
@@ -424,4 +512,5 @@ internal object MmsDownloadRecovery {
     }
 
     internal const val STABLE_FILE_GRACE_MS = 30_000L
+    private const val OBSERVATION_SUFFIX = ".obs"
 }

@@ -137,6 +137,45 @@ class IncomingMmsPrivateStoreTest {
         }
     }
 
+    @Test
+    fun retainedPrivateMessagesAreNotEvictedAndAProjectedOneCanLeave() = withTempRoot { root ->
+        val digests = mutableListOf<String>()
+        repeat(IncomingMmsPrivateStore.MAX_STORED_MMS) { index ->
+            val result = IncomingMmsPrivateStore.persist(
+                root,
+                "kept-$index".toByteArray(Charsets.UTF_8),
+                retainOnCommit = true,
+                subscriptionId = 1
+            )
+            assertEquals(IncomingMmsPrivateStore.State.CREATED, result.state)
+            digests += requireNotNull(result.digestHex)
+        }
+
+        val overflow = IncomingMmsPrivateStore.persist(
+            root,
+            "one-more".toByteArray(Charsets.UTF_8),
+            retainOnCommit = true,
+            subscriptionId = 1
+        )
+        assertEquals(IncomingMmsPrivateStore.State.FAILED, overflow.state)
+        assertEquals(IncomingMmsPrivateStore.MAX_STORED_MMS, pduFiles(root).size)
+        digests.forEach { digest ->
+            assertNotNull(IncomingMmsPrivateStore.read(root, digest))
+        }
+
+        assertTrue(IncomingMmsPrivateStore.releaseProjected(root, digests.first()))
+        val admitted = IncomingMmsPrivateStore.persist(
+            root,
+            "after-projection".toByteArray(Charsets.UTF_8),
+            retainOnCommit = true,
+            subscriptionId = 1
+        )
+        assertEquals(IncomingMmsPrivateStore.State.CREATED, admitted.state)
+        assertEquals(null, IncomingMmsPrivateStore.read(root, digests.first()))
+        assertNotNull(IncomingMmsPrivateStore.read(root, requireNotNull(admitted.digestHex)))
+        assertEquals(IncomingMmsPrivateStore.MAX_STORED_MMS, pduFiles(root).size)
+    }
+
     private fun pduFiles(root: File): List<File> =
         File(root, "mms-inbox").listFiles()
             ?.filter { it.isFile && it.extension == "pdu" }

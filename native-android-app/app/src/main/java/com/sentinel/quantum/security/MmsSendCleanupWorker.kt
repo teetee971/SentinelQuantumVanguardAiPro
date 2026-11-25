@@ -40,7 +40,10 @@ class MmsSendCleanupWorker(
                 MmsDownloadRecoveryWorker.schedulePendingNow(applicationContext)
                 true
             }.getOrDefault(false)
-            if (!recovered) {
+            val projectionStillPending = runCatching {
+                IncomingMmsProjectionRetry.retryPending(applicationContext)
+            }.getOrDefault(true)
+            if (!recovered || projectionStillPending) {
                 LocalLogger(applicationContext).log(
                     LocalLogger.LogLevel.WARNING,
                     "MmsRecovery",

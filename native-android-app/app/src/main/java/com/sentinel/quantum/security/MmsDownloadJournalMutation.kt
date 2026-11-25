@@ -135,4 +135,57 @@ internal object MmsDownloadDurability {
         privateRereadMatches && journalAccepted
 
     fun roleRevocationDeletesStaging(): Boolean = false
+
+    /**
+     * A missing or undecodable journal is not proof that the staging file is empty.
+     * Bytes stay. Only a confirmed absence of staging bytes may end the recovery.
+     */
+    fun outcomeWhenJournalUnreadable(stagingBytesPresent: Boolean): MmsDownloadRecovery.Outcome =
+        if (stagingBytesPresent) MmsDownloadRecovery.Outcome.DIAGNOSE
+        else MmsDownloadRecovery.Outcome.TERMINAL
+}
+
+/**
+ * Two identical observations, separated by monotonic elapsed time.
+ * Wall-clock steps do not make a file stable and do not expire it.
+ */
+internal object MmsStagingStability {
+    fun ready(
+        previousSize: Long?,
+        previousModifiedAtMs: Long?,
+        previousElapsedMs: Long?,
+        size: Long,
+        modifiedAtMs: Long,
+        elapsedMs: Long,
+        requiredElapsedMs: Long = MmsDownloadRecovery.STABLE_FILE_GRACE_MS
+    ): Boolean {
+        if (size <= 0L || modifiedAtMs <= 0L || requiredElapsedMs <= 0L) return false
+        if (previousSize == null || previousModifiedAtMs == null || previousElapsedMs == null) return false
+        if (previousSize != size || previousModifiedAtMs != modifiedAtMs) return false
+        if (elapsedMs < previousElapsedMs) return false
+        return elapsedMs - previousElapsedMs >= requiredElapsedMs
+    }
+
+    fun encode(size: Long, modifiedAtMs: Long, elapsedMs: Long): String =
+        "$size $modifiedAtMs $elapsedMs"
+
+    fun decode(raw: String): Triple<Long, Long, Long>? {
+        val parts = raw.trim().split(' ')
+        if (parts.size != 3) return null
+        val size = parts[0].toLongOrNull() ?: return null
+        val modifiedAtMs = parts[1].toLongOrNull() ?: return null
+        val elapsedMs = parts[2].toLongOrNull() ?: return null
+        if (size < 0L || modifiedAtMs < 0L || elapsedMs < 0L) return null
+        return Triple(size, modifiedAtMs, elapsedMs)
+    }
+}
+
+/** Undecodable rows and diagnosed or already-failed rows must not block a new download. */
+internal object MmsDownloadJournalAdmission {
+    fun countsTowardCap(
+        decodable: Boolean,
+        privateMissCount: Int,
+        transportFailed: Boolean,
+        diagnosisLimit: Int = MmsDownloadMissingCopyPolicy.OBSERVATION_LIMIT
+    ): Boolean = decodable && !transportFailed && privateMissCount < diagnosisLimit
 }

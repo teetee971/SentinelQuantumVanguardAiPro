@@ -191,6 +191,108 @@ class MmsDownloadDurabilityTest {
         assertTrue(current.get().digestHex == digestA || current.get().digestHex == digestB)
     }
 
+    @Test
+    fun unreadableJournalKeepsStagingBytesAndEndsOnlyWhenNothingIsThere() {
+        assertEquals(
+            MmsDownloadRecovery.Outcome.DIAGNOSE,
+            MmsDownloadDurability.outcomeWhenJournalUnreadable(stagingBytesPresent = true)
+        )
+        assertEquals(
+            MmsDownloadRecovery.Outcome.TERMINAL,
+            MmsDownloadDurability.outcomeWhenJournalUnreadable(stagingBytesPresent = false)
+        )
+        assertTrue(MmsDownloadRecovery.cleanupMustKeepStaging(MmsDownloadRecovery.Outcome.DIAGNOSE))
+    }
+
+    @Test
+    fun stabilityIgnoresWallClockAndRequiresTwoMatchingMonotonicObservations() {
+        assertFalse(
+            MmsStagingStability.ready(
+                previousSize = null,
+                previousModifiedAtMs = null,
+                previousElapsedMs = null,
+                size = 12L,
+                modifiedAtMs = 50L,
+                elapsedMs = 1_000_000L
+            )
+        )
+        assertFalse(
+            MmsStagingStability.ready(
+                previousSize = 12L,
+                previousModifiedAtMs = 50L,
+                previousElapsedMs = 1_000L,
+                size = 12L,
+                modifiedAtMs = 50L,
+                elapsedMs = 1_000L + MmsDownloadRecovery.STABLE_FILE_GRACE_MS - 1L
+            )
+        )
+        assertFalse(
+            MmsStagingStability.ready(
+                previousSize = 12L,
+                previousModifiedAtMs = 50L,
+                previousElapsedMs = 5_000L,
+                size = 13L,
+                modifiedAtMs = 50L,
+                elapsedMs = 5_000L + MmsDownloadRecovery.STABLE_FILE_GRACE_MS
+            )
+        )
+        assertFalse(
+            MmsStagingStability.ready(
+                previousSize = 12L,
+                previousModifiedAtMs = 50L,
+                previousElapsedMs = 9_000L,
+                size = 12L,
+                modifiedAtMs = 50L,
+                elapsedMs = 8_000L
+            )
+        )
+        assertTrue(
+            MmsStagingStability.ready(
+                previousSize = 12L,
+                previousModifiedAtMs = 50L,
+                previousElapsedMs = 1_000L,
+                size = 12L,
+                modifiedAtMs = 50L,
+                elapsedMs = 1_000L + MmsDownloadRecovery.STABLE_FILE_GRACE_MS
+            )
+        )
+        val encoded = MmsStagingStability.encode(12L, 50L, 1_000L)
+        assertEquals(Triple(12L, 50L, 1_000L), MmsStagingStability.decode(encoded))
+        assertNull(MmsStagingStability.decode("12 50"))
+    }
+
+    @Test
+    fun corruptOrDiagnosedJournalRowsDoNotConsumeAdmission() {
+        assertFalse(
+            MmsDownloadJournalAdmission.countsTowardCap(
+                decodable = false,
+                privateMissCount = 0,
+                transportFailed = false
+            )
+        )
+        assertFalse(
+            MmsDownloadJournalAdmission.countsTowardCap(
+                decodable = true,
+                privateMissCount = MmsDownloadMissingCopyPolicy.OBSERVATION_LIMIT,
+                transportFailed = false
+            )
+        )
+        assertFalse(
+            MmsDownloadJournalAdmission.countsTowardCap(
+                decodable = true,
+                privateMissCount = 0,
+                transportFailed = true
+            )
+        )
+        assertTrue(
+            MmsDownloadJournalAdmission.countsTowardCap(
+                decodable = true,
+                privateMissCount = MmsDownloadMissingCopyPolicy.OBSERVATION_LIMIT - 1,
+                transportFailed = false
+            )
+        )
+    }
+
     private fun snapshot(
         subscriptionId: Int = 1,
         requestedAtMs: Long = 10L,

@@ -167,6 +167,10 @@ object MmsDownloadCoordinator {
         if (file.parentFile != canonicalDirectory) return false
         val removed = !file.exists() || runCatching { file.delete() }.getOrDefault(false)
         if (!removed) return false
+        runCatching {
+            val observation = File(file.parentFile, fileName + ".obs")
+            if (observation.isFile) observation.delete()
+        }
 
         // Do not cancel the durable safety nets until the recovery journal is durably retired.
         // Otherwise a SharedPreferences commit failure can strand phantom recovery metadata with no
@@ -207,7 +211,8 @@ object MmsDownloadCoordinator {
         var retired = 0
         directory.listFiles().orEmpty()
             .filter {
-                it.isFile && (
+                it.isFile &&
+                    !it.name.endsWith(".obs") && (
                     it.lastModified() < cutoff ||
                     it.length() > MAX_DOWNLOADED_PDU_BYTES ||
                     !isValidStagedFileName(it.name)

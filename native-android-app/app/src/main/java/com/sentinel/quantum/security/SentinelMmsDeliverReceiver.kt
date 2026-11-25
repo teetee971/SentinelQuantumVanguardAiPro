@@ -103,10 +103,13 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
             MmsDownloadCoordinator.Result.NotNotification -> Unit
         }
 
+        val subscriptionId = MmsSubscriptionResolver.resolve(context, intent)
         val persistence = IncomingMmsPrivateStore.persist(
             context.filesDir,
             data,
-            MmsDownloadRecoveryJournal(context).pinnedDigests()
+            MmsDownloadRecoveryJournal(context).pinnedDigests(),
+            retainOnCommit = true,
+            subscriptionId = subscriptionId.takeIf(MmsSubscriptionResolver::isValidSubscriptionId)
         )
         val digest = persistence.digestHex
         if (persistence.state == IncomingMmsPrivateStore.State.FAILED || digest == null) {
@@ -118,7 +121,6 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
             return
         }
 
-        val subscriptionId = MmsSubscriptionResolver.resolve(context, intent)
         val prepared = if (MmsSubscriptionResolver.isValidSubscriptionId(subscriptionId)) {
             IncomingMmsProjectionPipeline.prepare(data, digest, subscriptionId)
         } else {
@@ -145,6 +147,12 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
                 "MmsProvider",
                 "MMS WAP conservé privé mais projection provider refusée; raison=${providerResult.reason}"
             )
+        } else if (prepared is IncomingMmsProjectionPipeline.Result.Quarantined) {
+            IncomingMmsPrivateRetention.clearSubscription(context.filesDir, digest)
+        } else if (
+            providerResult is IncomingMmsConversationStore.ProjectResult.Ready
+        ) {
+            IncomingMmsPrivateStore.releaseProjected(context.filesDir, digest)
         }
 
         val providerInserted =
