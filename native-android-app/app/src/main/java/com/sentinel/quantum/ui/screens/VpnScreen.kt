@@ -96,6 +96,10 @@ fun VpnScreen(navController: NavController) {
                     fontWeight = FontWeight.Bold
                 )
                 Text(
+                    text = "Hors profil commercial V1. Non opérationnel : aucune passerelle de sortie n’est qualifiée.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
                     text = "Client WireGuard intégré",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
@@ -133,7 +137,7 @@ fun VpnScreen(navController: NavController) {
             }
 
             SentinelSectionHeader(
-                title = "Fondations déjà actives",
+                title = "Pièces présentes, non opérationnelles",
                 trailing = "Client Android"
             )
 
@@ -142,7 +146,7 @@ fun VpnScreen(navController: NavController) {
                 Text("• Consentement VpnService obligatoire")
                 Text("• Full tunnel IPv4 et IPv6 requis")
                 Text("• DNS limité aux adresses épinglées de la passerelle")
-                Text("• Arbitrage avec Private Mesh")
+                Text("• Private Mesh non raccordé à cet écran et non opérationnel")
                 Text("• Bail de connexion borné et arrêt fail-closed")
                 Text(
                     text = "Aucun pays, débit, IP de sortie ou niveau de protection n’est affiché tant qu’un tunnel réel n’a pas été établi et confirmé.",
