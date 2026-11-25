@@ -161,6 +161,7 @@ class SettingsStore(context: Context) {
         val callerReputationEnrichmentEnabled: Boolean,
         val osintRefreshIntervalHours: Int,
         val osintNotificationsEnabled: Boolean,
+        val osintRssSources: Set<String>? = null,
         val smsNotificationPreviewEnabled: Boolean
     )
 
@@ -170,7 +171,7 @@ class SettingsStore(context: Context) {
      */
     fun applyRestorablePreferences(value: RestorablePreferences): Boolean =
         CALLER_REPUTATION_BOUNDARY.change {
-            val committed = preferences.edit()
+            val editor = preferences.edit()
                 .putString(THEME_MODE, value.themeMode.name)
                 .putString(PROTECTION_MODE, value.protectionMode.name)
                 .putString(FAMILY_SAFETY_PROFILE, value.familySafetyProfile.name)
@@ -184,18 +185,33 @@ class SettingsStore(context: Context) {
                 )
                 .putBoolean(OSINT_NOTIFICATIONS_ENABLED, value.osintNotificationsEnabled)
                 .putBoolean(SMS_NOTIFICATION_PREVIEW_ENABLED, value.smsNotificationPreviewEnabled)
-                .commit()
+            if (value.osintRssSources == null) {
+                editor.remove(OSINT_RSS_SOURCES)
+            } else {
+                editor.putStringSet(
+                    OSINT_RSS_SOURCES,
+                    OsintRssConfig.selection(value.osintRssSources).map { it.name }.toSet()
+                )
+            }
+            val committed = editor.commit()
             committed && if (
                 !value.callerReputationEnrichmentEnabled ||
                 !ProtectionModePolicy.permitsCallerNumberEnrichment(value.protectionMode)
             ) purgeCommunicationReputation() else true
         }
 
-    private fun purgeCommunicationReputation(): Boolean =
-        appContext.getSharedPreferences(
+    private fun purgeCommunicationReputation(): Boolean {
+        val stored = appContext.getSharedPreferences(
             COMMUNICATION_REPUTATION_PREFERENCES,
             Context.MODE_PRIVATE
-        ).edit().clear().commit()
+        )
+        val victims = com.sentinel.quantum.security.CommunicationReputationPurge
+            .keysToRemove(stored.all.keys)
+        if (victims.isEmpty()) return true
+        val editor = stored.edit()
+        victims.forEach { editor.remove(it) }
+        return editor.commit()
+    }
 
     /**
      * Refresh interval in hours, restricted to the supported values.
@@ -213,6 +229,23 @@ class SettingsStore(context: Context) {
         set(value) {
             preferences.edit().putBoolean(OSINT_NOTIFICATIONS_ENABLED, value).apply()
         }
+
+    /** Null means every public RSS feed. An empty set means none. */
+    fun osintRssSourceNames(): Set<String>? =
+        if (!preferences.contains(OSINT_RSS_SOURCES)) {
+            null
+        } else {
+            preferences.getStringSet(OSINT_RSS_SOURCES, emptySet())?.toSet().orEmpty()
+        }
+
+    fun setOsintRssSources(sources: Set<OsintSource>) {
+        preferences.edit()
+            .putStringSet(
+                OSINT_RSS_SOURCES,
+                sources.filter { it.kind == OsintSourceKind.RSS }.map { it.name }.toSet()
+            )
+            .apply()
+    }
 
     /**
      * Explicit opt-in for sender/message text in SMS notifications.
@@ -246,6 +279,7 @@ class SettingsStore(context: Context) {
         private const val FAMILY_SAFETY_PROFILE = "family_safety_profile"
         private const val OSINT_INTERVAL_HOURS = "osint_refresh_interval_hours"
         private const val OSINT_NOTIFICATIONS_ENABLED = "osint_notifications_enabled"
+        private const val OSINT_RSS_SOURCES = "osint_rss_sources"
         private const val SMS_NOTIFICATION_PREVIEW_ENABLED = "sms_notification_preview_enabled"
     }
 }

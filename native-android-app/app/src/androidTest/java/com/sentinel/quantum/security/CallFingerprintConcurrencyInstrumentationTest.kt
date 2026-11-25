@@ -1,6 +1,7 @@
 package com.sentinel.quantum.security
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import java.security.KeyStore
 import java.util.UUID
 import java.util.concurrent.CountDownLatch
@@ -15,7 +16,16 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class CallFingerprintConcurrencyInstrumentationTest {
+
+    companion object {
+        @kotlin.jvm.JvmStatic
+        @get:org.junit.ClassRule
+        val refuseInstalledPackage = com.sentinel.quantum.security.RefuseInstalledPackageRule()
+    }
+
     @Test fun concurrentFirstUseAcrossInstancesKeepsOneNonExportableKey() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        InstalledDataGuard.assertSafeToRun(instrumentation.targetContext, instrumentation.context)
         // A unique test version exercises real first-use creation without deleting or replacing
         // the application's v1/v2 aliases or modifying any user protection rule.
         val version = "test-" + UUID.randomUUID().toString()

@@ -6,6 +6,7 @@ import androidx.work.WorkerParameters
 import com.sentinel.quantum.BuildConfig
 import com.sentinel.quantum.data.OsintFeedCache
 import com.sentinel.quantum.data.OsintRepository
+import com.sentinel.quantum.data.OsintRssConfig
 import com.sentinel.quantum.data.SettingsStore
 
 /**
@@ -25,8 +26,10 @@ class OsintRefreshWorker(
         val repository = OsintRepository()
 
         val cachedSnapshot = cache.load()
+        val allowedSources = OsintRssConfig.fetchSources(SettingsStore(context).osintRssSourceNames())
+        val allowedNames = allowedSources.map { it.displayName }.toSet()
         val fetchResult = try {
-            repository.fetchAllFeedsResult()
+            repository.fetchAllFeedsResult(allowedSources)
         } catch (_: Exception) {
             null
         }
@@ -36,11 +39,11 @@ class OsintRefreshWorker(
             return if (runAttemptCount < MAX_RETRY_ATTEMPTS) Result.retry() else Result.success()
         }
 
-        val fresh = fetchResult.items
-        val cached = cachedSnapshot?.items
+        val fresh = OsintFeedDiff.retainSources(fetchResult.items, allowedNames)
+        val cached = OsintFeedDiff.notificationBaseline(cachedSnapshot?.items, allowedNames)
         val newItems = OsintFeedDiff.newItemsForNotification(cached, fresh)
 
-        // Read markings live under a separate key in OsintFeedCache and are preserved by save().
+        // Disabled feeds must not be merged back in from the previous snapshot.
         cache.save(if (cached == null) fresh else OsintFeedDiff.merge(cached, fresh))
 
         if (newItems.isNotEmpty() && SettingsStore(context).osintNotificationsEnabled) {

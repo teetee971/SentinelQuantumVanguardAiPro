@@ -1,0 +1,55 @@
+{
+  "document": "provenance-manifest",
+  "created": "2026-11-25",
+  "verdict_v26_apk": "NON_QUALIFIABLE",
+  "commercial_status": "NO-GO",
+  "v26_install_on_v25": "NO-GO",
+  "declared_v26": {
+    "commit": "9c57f6b66a071c2a2cac91c25d36078548c20c8a",
+    "git_cat_file": "absent",
+    "git_fetch": "remote error: upload-pack: not our ref",
+    "github_commit_api": "422 No commit found for SHA",
+    "versionCode": 26,
+    "versionName": "1.0.12",
+    "apk_sha256": "6f172ae8771d29520a786568bdc1b1af3aabfa9b1230c361e4447b2d9bd4de1e",
+    "apk_bytes_available": false,
+    "versionCode_26_in_git_history": false,
+    "versionName_1_0_12_in_app_build_gradle_history": false
+  },
+  "reconstruction_source": {
+    "branch_created": "cursor/v1-p0-v25-v26-20261125-3db1",
+    "parent_commit": "f036b2b79372f7402143b97730687ee5497351d6",
+    "parent_branch": "fix/v1-phone-core-p1-20261119",
+    "parent_pull_request": 1772,
+    "parent_pull_request_base": "integration/sentinel-v1-commercial-20261118",
+    "integration_commit": "113862500b9579e2ce476c190ad3195f676ffdda",
+    "merge_base_with_integration": "113862500b9579e2ce476c190ad3195f676ffdda",
+    "applicationId": "com.sentinel.quantum",
+    "versionCode": 10,
+    "versionName": "1.0.9",
+    "signing_config_changed": false,
+    "relation_to_declared_v26": "The declared V26 commit is not an ancestor, a descendant, or a reachable object of this source. This reconstruction does not claim to reproduce the V26 APK."
+  },
+  "fingerprints_at_parent": {
+    "native-android-app/app/build.gradle": "8977059e7f2ad6b6f88a13c867000c4b33ae6bf421de593c027e7dae20024e10",
+    "native-android-app/app/schemas/com.sentinel.quantum.security.SentinelLocalDatabase/1.json": "a7c5b4e1926c4441629734c0703ba6174e6bcf3796394b51302846bac0dae0c4",
+    "room_identity_hash": "21617aeab12bfb29ee9bec17bc238d62",
+    "room_schema_version": 1,
+    "room_entity": "call_filter_decisions",
+    "MmsConversationStore.kt": "3442afc066c92b17cb84f0487bd0eaa3e38b407d49be571a2d68f9ad121f2510",
+    "IncomingMmsConversationStore.kt": "6c6ca343dbe2cea26a5379562a4fe6f699ecc8085bc148e38f3291841fe8ffc1",
+    "SettingsStore.kt": "8d8da88968e5fda2a7ee478b8782b35cd04c35c7c29267f985f824b2811c3e7e",
+    "CallFilterLogStore.kt": "e14213b2024418ddeb5e4a5d7b41fdc5b1354ca3d9ed1a6726f811379346f4c0"
+  },
+  "ml_kit_image_share": {
+    "play_services_mlkit_in_gradle_history": false,
+    "present_on_reconstruction_source": false,
+    "reintroduced": false
+  },
+  "proof_levels": {
+    "unit_jvm": "executed in this change for the preservation and MMS ownership rules",
+    "android_integration": "NOT RUN",
+    "s24_plus": "NON FAIT"
+  },
+  "excluded_from_v1_and_not_reintroduced": ["VPN", "Qwen", "Mesh", "radio scanners"]
+}

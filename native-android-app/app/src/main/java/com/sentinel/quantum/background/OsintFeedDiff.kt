@@ -40,4 +40,27 @@ internal object OsintFeedDiff {
         cached.forEach { item -> if (!merged.containsKey(item.id)) merged[item.id] = item }
         return merged.values.sortedByDescending { it.pubDate }
     }
+
+    /** Drops items whose source was turned off. Display names are the stored source labels. */
+    fun retainSources(items: List<OsintFeedItem>, allowedSourceNames: Set<String>): List<OsintFeedItem> =
+        items.filter { it.source in allowedSourceNames }
+
+    /**
+     * Baseline for notifications after a source was disabled.
+     * A cache that no longer contains any allowed source is a silent bootstrap, not a burst.
+     */
+    fun notificationBaseline(
+        cached: List<OsintFeedItem>?,
+        allowedSourceNames: Set<String>
+    ): List<OsintFeedItem>? {
+        if (cached == null) return null
+        val retained = retainSources(cached, allowedSourceNames)
+        return if (retained.isEmpty() && cached.isNotEmpty()) null else retained
+    }
+
+    /** A cache that no longer contains an allowed source is not a complete snapshot. */
+    fun retainedCompleteSnapshot(
+        items: List<OsintFeedItem>,
+        allowedSourceNames: Set<String>
+    ): List<OsintFeedItem>? = retainSources(items, allowedSourceNames).takeIf { it.isNotEmpty() }
 }

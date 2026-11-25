@@ -17,7 +17,19 @@ import org.junit.runner.RunWith
 /** Real AndroidKeyStore checks. Compilation is not execution evidence. Never uses production alias. */
 @RunWith(AndroidJUnit4::class)
 class SentinelAiAuditJournalInstrumentationTest {
+
+    companion object {
+        @kotlin.jvm.JvmStatic
+        @get:org.junit.ClassRule
+        val refuseInstalledPackage = com.sentinel.quantum.security.RefuseInstalledPackageRule()
+    }
+
     @Test fun androidKeystoreReopenAndTamperingRejection() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        com.sentinel.quantum.security.InstalledDataGuard.assertSafeToRun(
+            instrumentation.targetContext,
+            instrumentation.context
+        )
         val alias = "sentinel_ai_audit_test_" + UUID.randomUUID()
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val directory = File(context.cacheDir, alias)

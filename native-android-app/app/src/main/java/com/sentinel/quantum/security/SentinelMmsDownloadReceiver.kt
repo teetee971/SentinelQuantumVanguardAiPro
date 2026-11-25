@@ -155,10 +155,14 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
         val persistence = IncomingMmsPrivateStore.confirmDurableCopy(
             context.filesDir,
             data,
-            journal.pinnedDigests()
+            journal.pinnedDigests(),
+            subscriptionId = record?.subscriptionId
         )
         val digest = persistence?.digestHex
         if (persistence == null || digest == null || record == null) {
+            if (digest != null && IncomingMmsPrivateRetention.contains(context.filesDir, digest)) {
+                IncomingMmsPrivateStore.releaseJournaled(digest)
+            }
             LocalLogger(context).log(
                 LocalLogger.LogLevel.SECURITY,
                 "MmsDownload",
@@ -174,6 +178,9 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
                 expectedRequestedAtMs = record.requestedAtMs
             )
         ) {
+            if (IncomingMmsPrivateRetention.contains(context.filesDir, digest)) {
+                IncomingMmsPrivateStore.releaseJournaled(digest)
+            }
             LocalLogger(context).log(
                 LocalLogger.LogLevel.WARNING,
                 "MmsDownload",
@@ -215,6 +222,11 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
                 "Projection provider MMS différée; la copie staged et le journal de reprise restent actifs; raison=${providerResult.reason}"
             )
             return
+        }
+        if (prepared is IncomingMmsProjectionPipeline.Result.Quarantined) {
+            IncomingMmsPrivateRetention.clearSubscription(context.filesDir, digest)
+        } else if (providerResult is IncomingMmsConversationStore.ProjectResult.Ready) {
+            IncomingMmsPrivateStore.releaseProjected(context.filesDir, digest)
         }
 
         val providerInserted =

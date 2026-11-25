@@ -21,6 +21,13 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class SmsMultipartBoundaryInstrumentationTest {
+
+    companion object {
+        @kotlin.jvm.JvmStatic
+        @get:org.junit.ClassRule
+        val refuseInstalledPackage = com.sentinel.quantum.security.RefuseInstalledPackageRule()
+    }
+
     @Test
     fun longUnicodeMessageCannotCrossTheCallbackTrackingLimit() {
         val maximumUcs2CodeUnitsPerMultipartSegment = 67

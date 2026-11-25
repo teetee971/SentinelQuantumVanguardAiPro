@@ -28,6 +28,7 @@ object SentinelPreferencesBackup {
         val callerReputationEnrichmentEnabled: Boolean,
         val osintRefreshIntervalHours: Int,
         val osintNotificationsEnabled: Boolean,
+        val osintRssSources: Set<String>? = null,
         val smsNotificationPreviewEnabled: Boolean,
         val blockedPrefixes: List<String>
     )
@@ -37,7 +38,7 @@ object SentinelPreferencesBackup {
             .mapNotNull(CallRuleEngine::normalizePrefix)
             .distinct()
             .take(CallRuleEngine.MAX_PREFIX_RULES)
-        return JSONObject()
+        val payload = JSONObject()
             .put("schema_version", SCHEMA_VERSION)
             .put("theme_mode", snapshot.themeMode.name)
             .put("protection_mode", snapshot.protectionMode.name)
@@ -47,7 +48,13 @@ object SentinelPreferencesBackup {
             .put("osint_notifications_enabled", snapshot.osintNotificationsEnabled)
             .put("sms_notification_preview_enabled", snapshot.smsNotificationPreviewEnabled)
             .put("blocked_prefixes", JSONArray(prefixes))
-            .toString(2)
+        snapshot.osintRssSources?.let { names ->
+            payload.put(
+                "osint_rss_sources",
+                JSONArray(OsintRssConfig.selection(names).map { it.name }.sorted())
+            )
+        }
+        return payload.toString(2)
     }
 
     fun decode(raw: String): Snapshot? = runCatching {
@@ -73,6 +80,19 @@ object SentinelPreferencesBackup {
             }
         }.distinct()
         if (prefixes.size > CallRuleEngine.MAX_PREFIX_RULES) return null
+        val rssSources = if (!json.has("osint_rss_sources")) {
+            null
+        } else {
+            val array = json.optJSONArray("osint_rss_sources") ?: return null
+            if (array.length() > OsintSource.entries.size) return null
+            buildSet<String> {
+                for (index in 0 until array.length()) {
+                    val name = array.optString(index, "")
+                    if (name.isEmpty()) return null
+                    add(name)
+                }
+            }
+        }
 
         Snapshot(
             themeMode = theme,
@@ -81,6 +101,7 @@ object SentinelPreferencesBackup {
             callerReputationEnrichmentEnabled = false,
             osintRefreshIntervalHours = interval,
             osintNotificationsEnabled = json.optBoolean("osint_notifications_enabled", true),
+            osintRssSources = rssSources,
             smsNotificationPreviewEnabled = json.optBoolean("sms_notification_preview_enabled", false),
             blockedPrefixes = prefixes
         )

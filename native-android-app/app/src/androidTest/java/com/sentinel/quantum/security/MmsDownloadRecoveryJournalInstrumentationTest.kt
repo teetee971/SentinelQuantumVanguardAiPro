@@ -15,13 +15,27 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class MmsDownloadRecoveryJournalInstrumentationTest {
+
+    companion object {
+        @kotlin.jvm.JvmStatic
+        @get:org.junit.ClassRule
+        val refuseInstalledPackage = com.sentinel.quantum.security.RefuseInstalledPackageRule()
+    }
+
     private val context: Context
         get() = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
+
+    private fun refuseInstalledPackage() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        InstalledDataGuard.assertSafeToRun(instrumentation.targetContext, instrumentation.context)
+    }
 
     private val createdFiles = mutableListOf<String>()
 
     @After
     fun cleanup() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        InstalledDataGuard.assertSafeToRun(instrumentation.targetContext, instrumentation.context)
         val journal = MmsDownloadRecoveryJournal(context)
         createdFiles.forEach(journal::remove)
         createdFiles.clear()
@@ -29,6 +43,7 @@ class MmsDownloadRecoveryJournalInstrumentationTest {
 
     @Test
     fun recordSurvivesJournalRecreationAndCanBeRetired() {
+        refuseInstalledPackage()
         val fileName = "123e4567-e89b-12d3-a456-426614174000.pdu"
         createdFiles += fileName
         val subscriptionId = 1
@@ -54,6 +69,7 @@ class MmsDownloadRecoveryJournalInstrumentationTest {
 
     @Test
     fun invalidFilenameAndSubscriptionAreRejectedFailClosed() {
+        refuseInstalledPackage()
         val journal = MmsDownloadRecoveryJournal(context)
 
         assertFalse(
@@ -81,6 +97,7 @@ class MmsDownloadRecoveryJournalInstrumentationTest {
 
     @Test
     fun corruptEntriesStayOnDiskAndDoNotFreeCapacity() {
+        refuseInstalledPackage()
         val preferences = context.getSharedPreferences(
             MmsDownloadRecoveryJournal.PREFS_NAME,
             Context.MODE_PRIVATE

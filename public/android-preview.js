@@ -77,9 +77,9 @@
     {
       title: 'Exposition numérique',
       description: 'Repérez certains signaux qui peuvent indiquer une exposition de vos informations en ligne.',
-      evidence: 'Les fonctions les plus avancées seront ajoutées progressivement.',
-      status: 'En validation',
-      statusClass: 'android-status-validation',
+      evidence: 'Hors profil commercial V1. Le contrôle affiché dans l’application complète n’est pas qualifié sur appareil.',
+      status: 'Hors V1',
+      statusClass: 'android-status-planned',
       position: '75% 100%'
     },
     {

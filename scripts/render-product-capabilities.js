@@ -11,6 +11,7 @@ const outputPath = path.join(rootDir, 'docs', 'PRODUCT_CAPABILITY_STATUS.md');
 export function statusFor(capability) {
   if (capability.customer_available) return 'AVAILABLE';
   if (!capability.implemented) return 'NOT_IMPLEMENTED';
+  if (capability.commercial_v1_exposed === false) return 'EXCLUDED_FROM_COMMERCIAL_V1';
   if (capability.runtime_verified) return 'VERIFIED_NOT_RELEASED';
   if (capability.deployed) return 'DEPLOYED_NOT_VERIFIED';
   if (capability.configured) return 'IMPLEMENTED_NOT_VERIFIED';
@@ -82,6 +83,7 @@ export function renderCapabilityConsumers(registry, baseDir = rootDir) {
     NOT_IMPLEMENTED: 'Prévu',
     VERIFIED_NOT_RELEASED: 'Vérifié, publication manquante',
     DEPLOYED_NOT_VERIFIED: 'Déployé, validation manquante',
+    EXCLUDED_FROM_COMMERCIAL_V1: 'Hors profil commercial V1, non opérationnel',
     IMPLEMENTED_NOT_VERIFIED: 'Implémenté, validation manquante',
     IMPLEMENTED_NOT_CONFIGURED: 'Implémenté, configuration manquante'
   };

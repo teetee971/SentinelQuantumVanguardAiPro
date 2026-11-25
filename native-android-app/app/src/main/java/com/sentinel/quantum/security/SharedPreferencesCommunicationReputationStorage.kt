@@ -71,7 +71,7 @@ class SharedPreferencesCommunicationReputationStorage(
         const val KEY_PREFS_NAME = "sentinel_communication_reputation_key"
 
         private const val SECRET_PREF_KEY = "hmac_secret_v1"
-        private const val STORAGE_KEY_PREFIX = "h1:"
+        internal const val STORAGE_KEY_PREFIX = "h1:"
         private const val HMAC_ALGORITHM = "HmacSHA256"
         private const val SECRET_BYTES = 32
         private val SECRET_LOCK = Any()

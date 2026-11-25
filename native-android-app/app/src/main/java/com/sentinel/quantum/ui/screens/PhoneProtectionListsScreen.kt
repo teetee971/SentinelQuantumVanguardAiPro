@@ -2,7 +2,6 @@ package com.sentinel.quantum.ui.screens
 
 import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -37,7 +36,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
@@ -95,8 +94,8 @@ fun PhoneProtectionListsScreen(navController: NavController) {
     val signedMetadata = remember(postureEpoch) { store.signedRuleMetadata() }
     val runtimeFacts = remember(postureEpoch) { PhoneCoreRuntimeFacts.read(context.applicationContext) }
     val contactsReady = remember(postureEpoch) {
-        ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) ==
-            PackageManager.PERMISSION_GRANTED
+        PermissionChecker.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) ==
+            PermissionChecker.PERMISSION_GRANTED
     }
     val manualPrefixes = remember(snapshot) { store.manualBlockedPrefixes() }
 

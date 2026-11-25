@@ -15,8 +15,19 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class SentinelAiActionJournalEvidenceTest {
+
+    companion object {
+        @kotlin.jvm.JvmStatic
+        @get:org.junit.ClassRule
+        val refuseInstalledPackage = com.sentinel.quantum.security.RefuseInstalledPackageRule()
+    }
+
     @Test fun actionJournalEvidenceProtocol() {
         val instrumentation=InstrumentationRegistry.getInstrumentation()
+        com.sentinel.quantum.security.InstalledDataGuard.assertSafeToRun(
+            instrumentation.targetContext,
+            instrumentation.context
+        )
         val context=instrumentation.targetContext
         assumeTrue("Application journal evidence requires the dedicated C11 validation APK",
             context.packageName == SENTINEL_AI_C11_PACKAGE)

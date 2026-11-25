@@ -52,57 +52,78 @@ class OsintRepository(private val cache: OsintFeedCache? = null) {
         }
 
         try {
-            val request = Request.Builder()
-                .url(source.url)
-                .header("Accept", "application/rss+xml, application/atom+xml, application/xml, text/xml")
-                .header("User-Agent", "SentinelQuantumVanguardAiPro-OSINT/1.0")
-                .get()
-                .build()
-
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    return@withContext SourceFetch(false, emptyList())
-                }
-
-                val body = response.body
-                val declaredLength = body.contentLength()
-                if (declaredLength > MAX_FEED_BYTES) {
-                    return@withContext SourceFetch(false, emptyList())
-                }
-
-                val xmlBytes = body.byteStream().use { input ->
-                    BoundedInputReader.read(input, MAX_FEED_BYTES)
-                } ?: return@withContext SourceFetch(false, emptyList())
-
-                val feed: SyndFeed = ByteArrayInputStream(xmlBytes).use { input ->
-                    SyndFeedInput().build(XmlReader(input))
-                }
-
-                val items = feed.entries
-                    .asSequence()
-                    .take(MAX_FEED_ENTRIES)
-                    .map { entry ->
-                        OsintFeedItem(
-                            title = entry.title.orEmpty(),
-                            description = entry.description?.value ?: "",
-                            link = entry.link ?: "",
-                            source = source.displayName,
-                            // Missing publication time must never be promoted to "now". Epoch is
-                            // an explicit unknown sentinel; the UI renders it as "Date inconnue".
-                            pubDate = entry.publishedDate ?: Date(UNKNOWN_PUBLISHED_AT_MS),
-                            category = entry.categories.firstOrNull()?.name ?: ""
-                        )
-                    }
-                    .toList()
-                SourceFetch(true, items)
+            val nowMs = System.currentTimeMillis()
+            val requestUrl = OsintPublicSources.requestUrl(source, nowMs)
+                ?: return@withContext SourceFetch(false, emptyList())
+            val accept = if (source.kind == OsintSourceKind.RSS) {
+                "application/rss+xml, application/atom+xml, application/xml, text/xml"
+            } else {
+                "application/json"
             }
+            val bytes = getBytes(requestUrl, accept) ?: return@withContext SourceFetch(false, emptyList())
+            if (source.kind == OsintSourceKind.RSS) {
+                return@withContext SourceFetch(true, parseRss(bytes, source))
+            }
+            if (source.kind == OsintSourceKind.CISA_KEV) {
+                val items = OsintPublicSources.parseKev(bytes.toString(Charsets.UTF_8), source.displayName)
+                    ?: return@withContext SourceFetch(false, emptyList())
+                return@withContext SourceFetch(true, items)
+            }
+            val first = OsintPublicSources.parseNvd(bytes.toString(Charsets.UTF_8), source.displayName)
+                ?: return@withContext SourceFetch(false, emptyList())
+            val lastPage = OsintPublicSources.nvdLastPageStart(first.totalResults)
+                ?: return@withContext SourceFetch(false, emptyList())
+            if (lastPage == 0) return@withContext SourceFetch(true, first.items)
+            val lastUrl = OsintPublicSources.requestUrl(source, nowMs, lastPage)
+                ?: return@withContext SourceFetch(false, emptyList())
+            val lastBytes = getBytes(lastUrl, accept) ?: return@withContext SourceFetch(false, emptyList())
+            val last = OsintPublicSources.parseNvd(lastBytes.toString(Charsets.UTF_8), source.displayName)
+                ?: return@withContext SourceFetch(false, emptyList())
+            SourceFetch(true, last.items)
         } catch (_: Exception) {
             SourceFetch(false, emptyList())
         }
     }
 
-    suspend fun fetchAllFeedsResult(): FetchResult = withContext(Dispatchers.IO) {
-        val results = OsintSource.entries.map { fetchFeedResult(it) }
+    private fun getBytes(url: String, accept: String): ByteArray? {
+        val request = Request.Builder()
+            .url(url)
+            .header("Accept", accept)
+            .header("User-Agent", "SentinelQuantumVanguardAiPro-OSINT/1.0")
+            .get()
+            .build()
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) return null
+            val body = response.body
+            if (body.contentLength() > MAX_FEED_BYTES) return null
+            return body.byteStream().use { input -> BoundedInputReader.read(input, MAX_FEED_BYTES) }
+        }
+    }
+
+    private fun parseRss(xmlBytes: ByteArray, source: OsintSource): List<OsintFeedItem> {
+        val feed: SyndFeed = ByteArrayInputStream(xmlBytes).use { input ->
+            SyndFeedInput().build(XmlReader(input))
+        }
+        return feed.entries
+            .asSequence()
+            .take(MAX_FEED_ENTRIES)
+            .map { entry ->
+                OsintFeedItem(
+                    title = entry.title.orEmpty(),
+                    description = entry.description?.value ?: "",
+                    link = entry.link ?: "",
+                    source = source.displayName,
+                    pubDate = entry.publishedDate ?: Date(UNKNOWN_PUBLISHED_AT_MS),
+                    category = entry.categories.firstOrNull()?.name ?: ""
+                )
+            }
+            .toList()
+    }
+
+    suspend fun fetchAllFeedsResult(
+        sources: List<OsintSource> = OsintSource.entries
+    ): FetchResult = withContext(Dispatchers.IO) {
+        val results = sources.map { fetchFeedResult(it) }
         val items = results.flatMap { it.items }.sortedByDescending { it.pubDate }
         FetchResult(items, results.count { it.succeeded }, results.size)
     }

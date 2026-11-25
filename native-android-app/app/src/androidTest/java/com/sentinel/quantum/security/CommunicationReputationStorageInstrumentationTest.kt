@@ -15,11 +15,20 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class CommunicationReputationStorageInstrumentationTest {
+
+    companion object {
+        @kotlin.jvm.JvmStatic
+        @get:org.junit.ClassRule
+        val refuseInstalledPackage = com.sentinel.quantum.security.RefuseInstalledPackageRule()
+    }
+
     private val context: Context
         get() = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
 
     @Before
     fun enableRemoteReputationForPersistenceTests() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        InstalledDataGuard.assertSafeToRun(instrumentation.targetContext, instrumentation.context)
         SettingsStore(context).apply {
             protectionMode = ProtectionMode.ENHANCED
             callerReputationEnrichmentEnabled = true
@@ -28,6 +37,8 @@ class CommunicationReputationStorageInstrumentationTest {
 
     @After
     fun cleanup() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        InstalledDataGuard.assertSafeToRun(instrumentation.targetContext, instrumentation.context)
         SettingsStore(context).apply {
             callerReputationEnrichmentEnabled = false
             protectionMode = ProtectionMode.LOCAL_ONLY

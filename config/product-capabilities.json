@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-10-05",
+  "updated_at": "2026-11-25",
   "capabilities": [
     {
       "id": "phone_core_android",
@@ -55,7 +55,8 @@
         "incoming_sms_notification",
         "caller_id_ui_shown",
         "in_call_ui_shown"
-      ]
+      ],
+      "commercial_v1_exposed": true
     },
     {
       "id": "sentinel_vpn_service",
@@ -73,7 +74,8 @@
       "blockers": [
         "Production Sentinel exit gateway is not provisioned",
         "Independent PostgreSQL lease sequence authority is implemented but not configured, deployed or runtime-verified",
-        "End-to-end tunnel, DNS, IPv4/IPv6, MTU and recovery evidence is missing"
+        "End-to-end tunnel, DNS, IPv4/IPv6, MTU and recovery evidence is missing",
+        "Not exposed by the -PsentinelCommercialV1=true navigation or manifest; this is not an operational customer feature"
       ],
       "evidence": [
         "docs/security/SENTINEL-VPN-ARCHITECTURE.md",
@@ -111,7 +113,8 @@
         "mtu_verified",
         "recovery_verified",
         "revocation_verified"
-      ]
+      ],
+      "commercial_v1_exposed": false
     },
     {
       "id": "voice_transform_calls",
@@ -129,7 +132,8 @@
       "blockers": [
         "Production LiveKit signaling/token issuer is not provisioned",
         "VoIP/PSTN gateway is not provisioned",
-        "No real transformed call has passed end-to-end physical validation"
+        "No real transformed call has passed end-to-end physical validation",
+        "Not exposed by the -PsentinelCommercialV1=true navigation or manifest; this is not an operational customer feature"
       ],
       "evidence": [
         "docs/VOICE-STUDIO-ADDON.md",
@@ -165,7 +169,8 @@
         "echo_verified",
         "bluetooth_verified",
         "reconnection_verified"
-      ]
+      ],
+      "commercial_v1_exposed": false
     },
     {
       "id": "geointel_usgs",
@@ -197,7 +202,8 @@
         "public/geointel-source-usgs.js",
         ".github/workflows/frontend-validation.yml"
       ],
-      "required_physical_criteria": []
+      "required_physical_criteria": [],
+      "commercial_v1_exposed": false
     },
     {
       "id": "geointel_multisource",
@@ -227,7 +233,8 @@
         "public/geointel.html",
         "public/geointel-core.js"
       ],
-      "required_physical_criteria": []
+      "required_physical_criteria": [],
+      "commercial_v1_exposed": false
     },
     {
       "id": "collective_defense_backend",
@@ -258,7 +265,8 @@
         "backend/wangiri-api/collective_intel.py",
         "render.yaml"
       ],
-      "required_physical_criteria": []
+      "required_physical_criteria": [],
+      "commercial_v1_exposed": false
     },
     {
       "id": "collective_defense_android",
@@ -275,7 +283,8 @@
       "customer_available": false,
       "blockers": [
         "Merged signed Android release evidence is missing",
-        "Real-device lookup/report/watch/background-notification evidence is missing"
+        "Real-device lookup/report/watch/background-notification evidence is missing",
+        "Not exposed by the -PsentinelCommercialV1=true navigation or manifest; this is not an operational customer feature"
       ],
       "evidence": [
         "native-android-app/app/src/main/java/com/sentinel/quantum/security/CollectiveDefenseClient.kt",
@@ -313,7 +322,8 @@
         "background_recheck_verified",
         "notification_verified",
         "network_failure_verified"
-      ]
+      ],
+      "commercial_v1_exposed": false
     },
     {
       "id": "signed_phone_reputation_feed",
@@ -357,7 +367,8 @@
         "signed_feed_synchronization_verified",
         "expiry_verified",
         "revocation_verified"
-      ]
+      ],
+      "commercial_v1_exposed": false
     },
     {
       "id": "phone_moderation_backend",
@@ -390,7 +401,8 @@
         "security/phone-intelligence/postgres-moderation-store.js",
         "security/phone-intelligence/redis-rate-limiter.js"
       ],
-      "required_physical_criteria": []
+      "required_physical_criteria": [],
+      "commercial_v1_exposed": false
     },
     {
       "id": "repository_i18n",
@@ -421,7 +433,8 @@
         "native-android-app/app/src/main/res/values/strings.xml",
         "native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/HomeScreen.kt"
       ],
-      "required_physical_criteria": []
+      "required_physical_criteria": [],
+      "commercial_v1_exposed": false
     },
     {
       "id": "android_distribution_compliance",
@@ -474,7 +487,8 @@
         "public/pricing.html",
         "RELEASE_CHECKLIST.md"
       ],
-      "required_physical_criteria": []
+      "required_physical_criteria": [],
+      "commercial_v1_exposed": false
     },
     {
       "id": "public_android_release",
@@ -518,7 +532,8 @@
         "signed_artifact_installed",
         "launch_verified",
         "publication_channel_observed"
-      ]
+      ],
+      "commercial_v1_exposed": false
     },
     {
       "id": "saas_identity",
@@ -546,7 +561,8 @@
       "evidence_sha": null,
       "evidence_at": null,
       "verification_evidence": {},
-      "dependencies": []
+      "dependencies": [],
+      "commercial_v1_exposed": false
     },
     {
       "id": "voice_call_infrastructure",
@@ -574,7 +590,8 @@
       "evidence_sha": null,
       "evidence_at": null,
       "verification_evidence": {},
-      "dependencies": []
+      "dependencies": [],
+      "commercial_v1_exposed": false
     },
     {
       "id": "vpn_sequence_authority",
@@ -607,7 +624,8 @@
       "evidence_sha": null,
       "evidence_at": null,
       "verification_evidence": {},
-      "dependencies": []
+      "dependencies": [],
+      "commercial_v1_exposed": false
     },
     {
       "id": "mesh_runtime",
@@ -623,7 +641,8 @@
       "release_signed": false,
       "customer_available": false,
       "blockers": [
-        "Production identity, relay runtime and revocation/data-plane acceptance evidence are not recorded"
+        "Production identity, relay runtime and revocation/data-plane acceptance evidence are not recorded",
+        "Not exposed by the -PsentinelCommercialV1=true navigation or manifest; this is not an operational customer feature"
       ],
       "evidence": [
         "network/mesh/server.js",
@@ -637,7 +656,8 @@
       "evidence_sha": null,
       "evidence_at": null,
       "verification_evidence": {},
-      "dependencies": []
+      "dependencies": [],
+      "commercial_v1_exposed": false
     },
     {
       "id": "osint_android_feeds",
@@ -653,7 +673,8 @@
       "release_signed": false,
       "customer_available": false,
       "blockers": [
-        "Revision-bound runtime and signed Android distribution evidence are missing"
+        "Revision-bound runtime and signed Android distribution evidence are missing",
+        "Not exposed by the -PsentinelCommercialV1=true navigation or manifest; this is not an operational customer feature"
       ],
       "evidence": [
         "native-android-app/app/src/main/java/com/sentinel/quantum/data/OsintRepository.kt"
@@ -673,7 +694,8 @@
             "deployed"
           ]
         }
-      ]
+      ],
+      "commercial_v1_exposed": false
     }
   ]
 }

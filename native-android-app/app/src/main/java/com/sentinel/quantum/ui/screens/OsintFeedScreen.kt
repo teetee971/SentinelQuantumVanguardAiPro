@@ -19,11 +19,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.R
+import com.sentinel.quantum.background.OsintFeedDiff
 import com.sentinel.quantum.data.OsintFeedCache
 import com.sentinel.quantum.data.OsintFeedItem
 import com.sentinel.quantum.data.OsintPublicationTime
 import com.sentinel.quantum.data.OsintRepository
-import com.sentinel.quantum.data.OsintSource
+import com.sentinel.quantum.data.OsintRssConfig
+import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.data.OsintTransientItemStore
 import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.ui.design.SentinelD1
@@ -62,7 +64,9 @@ fun OsintFeedScreen(navController: NavController) {
             isLoading = true
             errorMessage = null
             try {
-                val result = repository.fetchAllFeedsResult()
+                val result = repository.fetchAllFeedsResult(
+                    OsintRssConfig.fetchSources(SettingsStore(context).osintRssSourceNames())
+                )
                 when {
                     result.isComplete && result.items.isNotEmpty() -> {
                         cache.save(result.items)
@@ -133,10 +137,16 @@ fun OsintFeedScreen(navController: NavController) {
     LaunchedEffect(Unit) {
         val cached = withContext(Dispatchers.IO) { repository.loadCached() }
         if (cached != null) {
-            feedItems = cached.items
-            cachedAtMs = cached.fetchedAtMs
-            displayedSnapshot = OsintDisplayedSnapshot.COMPLETE
-            OsintTransientItemStore.clear()
+            val allowed = OsintRssConfig.fetchSources(SettingsStore(context).osintRssSourceNames())
+                .map { it.displayName }
+                .toSet()
+            val retained = OsintFeedDiff.retainedCompleteSnapshot(cached.items, allowed)
+            if (retained != null) {
+                feedItems = retained
+                cachedAtMs = cached.fetchedAtMs
+                displayedSnapshot = OsintDisplayedSnapshot.COMPLETE
+                OsintTransientItemStore.clear()
+            }
         }
         loadFeeds()
     }
@@ -219,7 +229,7 @@ fun OsintFeedScreen(navController: NavController) {
                         onClick = { selectedSource = null },
                         label = { Text(stringResource(R.string.osint_filter_all)) }
                     )
-                    OsintSource.entries.forEach { source ->
+                    OsintRssConfig.fetchSources(SettingsStore(context).osintRssSourceNames()).forEach { source ->
                         FilterChip(
                             selected = selectedSource == source.displayName,
                             onClick = {

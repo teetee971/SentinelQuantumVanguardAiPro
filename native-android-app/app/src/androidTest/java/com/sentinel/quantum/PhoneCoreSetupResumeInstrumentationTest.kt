@@ -33,11 +33,21 @@ class PhoneCoreSetupResumeInstrumentationTest {
 
     @Before
     fun clearWizardHistory() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        com.sentinel.quantum.security.InstalledDataGuard.assertSafeToRun(
+            instrumentation.targetContext,
+            instrumentation.context
+        )
         prefs.edit().clear().commit()
     }
 
     @After
     fun cleanUpWizardHistoryAndDialogs() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        com.sentinel.quantum.security.InstalledDataGuard.assertSafeToRun(
+            instrumentation.targetContext,
+            instrumentation.context
+        )
         runCatching {
             dismissSystemSetupDialog()
         }
@@ -115,7 +125,11 @@ class PhoneCoreSetupResumeInstrumentationTest {
         }
     }
 
-    private companion object {
+    companion object {
+        @kotlin.jvm.JvmStatic
+        @get:org.junit.ClassRule
+        val refuseInstalledPackage = com.sentinel.quantum.security.RefuseInstalledPackageRule()
+
         const val PREFS = "phone_core_setup_wizard_v2"
         const val KEY_ATTEMPTED_TARGET = "attempted_target"
         const val KEY_COMPLETED = "completed"

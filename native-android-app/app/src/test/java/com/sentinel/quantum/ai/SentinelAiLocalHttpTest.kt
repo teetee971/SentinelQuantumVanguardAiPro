@@ -8,6 +8,8 @@ import java.net.SocketTimeoutException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
+import okhttp3.OkHttpClient
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -72,19 +74,87 @@ class SentinelAiLocalHttpTest {
         } finally { server.close();engine.close();pool.shutdownNow() }
     }
     @Test fun redirectDoesNotReachAnotherLoopbackEndpoint() {
-        ServerSocket(0, 1, InetAddress.getByName("127.0.0.1")).use { destination ->
-            destination.soTimeout = 400
-            Server { client ->
-                client.getOutputStream().apply {
-                    write(("HTTP/1.1 302 Found\r\nLocation: http://127.0.0.1:${destination.localPort}/stolen\r\n" +
-                        "Content-Length: 0\r\nConnection: close\r\n\r\n").toByteArray());flush()
+        val loopback = InetAddress.getByName("127.0.0.1")
+        ServerSocket(0, 64, loopback).use { bait ->
+            ServerSocket(0, 64, loopback).use { origin ->
+                val served = AtomicReference<String?>(null)
+                val worker = Executors.newSingleThreadExecutor()
+                worker.submit {
+                    val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
+                    while (served.get() == null && System.nanoTime() < deadline && !Thread.currentThread().isInterrupted) {
+                        origin.soTimeout = 200
+                        val client = try {
+                            origin.accept()
+                        } catch (_: SocketTimeoutException) {
+                            continue
+                        } catch (_: IOException) {
+                            break
+                        }
+                        client.use { socket ->
+                            val line = requestLine(socket) ?: return@use
+                            if (!line.startsWith("GET /challenge?client_nonce=")) return@use
+                            served.set(line)
+                            socket.getOutputStream().apply {
+                                write(("HTTP/1.1 302 Found\r\nLocation: http://127.0.0.1:${bait.localPort}/stolen\r\n" +
+                                    "Content-Length: 0\r\nConnection: close\r\n\r\n").toByteArray())
+                                flush()
+                            }
+                        }
+                    }
                 }
-            }.use { server ->
-                SentinelAiLocalEngine(ByteArray(32), SentinelAiLocalEngine.LoopbackTransport(server.port)).use { engine ->
-                    assertThrows(IOException::class.java) { engine.infer("private fixture") }
-                    assertThrows(SocketTimeoutException::class.java) { destination.accept().close() }
+                try {
+                    val client = loopbackClient()
+                    assertFalse(client.followRedirects)
+                    assertFalse(client.followSslRedirects)
+                    assertFalse(client.retryOnConnectionFailure)
+                    SentinelAiLocalEngine(ByteArray(32), SentinelAiLocalEngine.LoopbackTransport(origin.localPort)).use { engine ->
+                        assertThrows(IOException::class.java) { engine.infer("private fixture") }
+                    }
+                    val request = served.get()
+                    assertNotNull("the engine challenge never reached the origin listener", request)
+                    assertFalse(request!!.contains("/stolen"))
+                    val stolen = stolenRequest(bait, 800)
+                    assertNull("redirect was followed to $stolen", stolen)
+                } finally {
+                    origin.close()
+                    worker.shutdownNow()
                 }
             }
         }
+    }
+
+    /** A foreign handshake is not a followed redirect. Only an HTTP request for the bait path is. */
+    private fun stolenRequest(bait: ServerSocket, budgetMs: Long): String? {
+        val deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(budgetMs)
+        while (System.nanoTime() < deadline) {
+            val remaining = TimeUnit.NANOSECONDS.toMillis(deadline - System.nanoTime()).toInt().coerceAtLeast(1)
+            bait.soTimeout = remaining
+            val client = try {
+                bait.accept()
+            } catch (_: SocketTimeoutException) {
+                return null
+            }
+            client.use { socket ->
+                val line = requestLine(socket)
+                if (line != null && line.contains("/stolen")) return line
+            }
+        }
+        return null
+    }
+
+    private fun requestLine(socket: Socket): String? {
+        socket.soTimeout = 200
+        return try {
+            socket.getInputStream().bufferedReader(Charsets.US_ASCII).readLine()
+        } catch (_: IOException) {
+            null
+        }
+    }
+
+    private fun loopbackClient(): OkHttpClient {
+        val type = Class.forName("com.sentinel.quantum.ai.SentinelAiLocalEngine\$LoopbackTransport")
+        val field = type.getDeclaredField("HTTP")
+        field.isAccessible = true
+        return field.get(null) as OkHttpClient
     }
 }

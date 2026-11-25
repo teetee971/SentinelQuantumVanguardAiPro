@@ -9,6 +9,13 @@ import org.junit.runner.RunWith
 /** Must run on the target Android OS. XML guards and compilation cannot prove these results. */
 @RunWith(AndroidJUnit4::class)
 class SentinelAiNetworkPolicyInstrumentationTest {
+
+    companion object {
+        @kotlin.jvm.JvmStatic
+        @get:org.junit.ClassRule
+        val refuseInstalledPackage = com.sentinel.quantum.security.RefuseInstalledPackageRule()
+    }
+
     @Test fun permitsOnlyTheApprovedLoopbackHost() {
         val policy = NetworkSecurityPolicy.getInstance()
         assertTrue(policy.isCleartextTrafficPermitted("127.0.0.1"))

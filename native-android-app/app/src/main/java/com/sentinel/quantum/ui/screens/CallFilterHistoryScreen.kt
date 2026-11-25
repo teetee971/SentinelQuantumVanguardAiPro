@@ -42,14 +42,18 @@ import java.util.Date
 @Composable
 fun CallFilterHistoryScreen(navController: NavController) {
     val context = LocalContext.current.applicationContext
-    val store = remember(context) { CallFilterLogStore.get(context) }
+    val store = remember(context) { runCatching { CallFilterLogStore.get(context) }.getOrNull() }
     var history by remember { mutableStateOf<List<CallHistoryPresentation>>(emptyList()) }
     var confirmClear by remember { mutableStateOf(false) }
     var clearing by remember { mutableStateOf(false) }
     var clearFailed by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    val reload: suspend () -> Unit = { history = store.history().map(CallHistoryPresentationMapper::from) }
-    LaunchedEffect(store) { reload() }
+    val reload: suspend () -> Unit = {
+        store?.let { current ->
+            history = current.history().map(CallHistoryPresentationMapper::from)
+        }
+    }
+    LaunchedEffect(store) { if (store != null) reload() }
 
     Scaffold(
         topBar = {
@@ -74,22 +78,30 @@ fun CallFilterHistoryScreen(navController: NavController) {
                 Modifier.padding(16.dp),
                 style = MaterialTheme.typography.bodySmall
             )
-            if (clearFailed) {
-                Text("Effacement indisponible.", Modifier.padding(horizontal = 16.dp))
-            }
-            if (history.isEmpty()) {
+            if (store == null) {
                 Text(
-                    stringResource(R.string.call_history_empty),
-                    Modifier.padding(32.dp),
+                    stringResource(R.string.call_history_preserved_closed),
+                    Modifier.padding(horizontal = 16.dp),
                     style = MaterialTheme.typography.bodyLarge
                 )
             } else {
-                LazyColumn(
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(history, key = { it.id }) { entry ->
-                        CallFilterHistoryCard(entry)
+                if (clearFailed) {
+                    Text("Effacement indisponible.", Modifier.padding(horizontal = 16.dp))
+                }
+                if (history.isEmpty()) {
+                    Text(
+                        stringResource(R.string.call_history_empty),
+                        Modifier.padding(32.dp),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                } else {
+                    LazyColumn(
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(history, key = { it.id }) { entry ->
+                            CallFilterHistoryCard(entry)
+                        }
                     }
                 }
             }
@@ -106,9 +118,14 @@ fun CallFilterHistoryScreen(navController: NavController) {
                     clearing = true
                     clearFailed = false
                     scope.launch {
+                        val current = store
                         try {
-                            store.clear()
-                            reload()
+                            if (current == null) {
+                                clearFailed = true
+                            } else {
+                                current.clear()
+                                reload()
+                            }
                         } catch (cancelled: CancellationException) {
                             throw cancelled
                         } catch (_: Exception) {

@@ -15,6 +15,13 @@ import org.junit.runner.RunWith
 /** Exercises the asynchronous authorization boundary without sending or persisting an SMS. */
 @RunWith(AndroidJUnit4::class)
 class SmsDeliveryRoleInstrumentationTest {
+
+    companion object {
+        @kotlin.jvm.JvmStatic
+        @get:org.junit.ClassRule
+        val refuseInstalledPackage = com.sentinel.quantum.security.RefuseInstalledPackageRule()
+    }
+
     private val context: Context
         get() = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
 

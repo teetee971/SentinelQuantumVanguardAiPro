@@ -1,0 +1,664 @@
+RAPPORT SENTINEL PHONE CORE V1 — CONFORMITE GOOGLE PLAY
+Date : 18 novembre 2026, soir
+Depot : https://github.com/teetee971/SentinelQuantumVanguardAiPro
+Verdict : NO-GO production
+
+Ce rapport dit ce qui a ete lu, corrige, teste, declare, et ce qui reste ouvert.
+Une compilation reussie, un test JVM reussi, ou une identite inscrite dans un brouillon
+ne signifient pas que l'application est publiable.
+
+
+1. VERDICT
+
+NO-GO production.
+
+Deux blocages P0 restent ouverts :
+
+- A1. La politique Phone Core V1 n'est pas publiee a une URL HTTPS qui sert ce texte.
+  Le bouton de l'application ouvre encore la politique de vitrine de septembre 2026
+  et affiche que l'adresse V1 n'est pas verifiee.
+- A4. Il n'y a pas d'AAB signe, pas de cle Play dans cet environnement,
+  pas de recette sur Galaxy S24+, pas d'envoi a Google Play.
+
+A2 et A3, telechargements de catalogues sans interrupteur, sont corriges dans le source
+et couverts par des tests JVM. Ils n'ont pas ete rejoues sur un telephone.
+
+Rien n'a ete fusionne dans main. Rien n'a ete depose sur Google Play.
+Aucun second compte developpeur n'a ete cree. Aucun SIREN ni SIRET n'a ete invente.
+Aucune cle de signature n'a ete creee.
+
+
+2. IDENTITE DU BUILD
+
+Profil Gradle : -PsentinelCommercialV1=true
+
+Element                         Valeur
+Paquet de publication           com.sentinel.quantum
+versionName                     1.0.9
+versionCode                     10
+minSdk                          24
+targetSdk                       36
+compileSdk                      37
+Paquet de recette debug         com.sentinel.quantum.v1validation
+versionName de recette          1.0.9-v1-validation
+Libelle release dans le source  Sentinel Phone Core
+
+Le paquet debug ne doit pas etre depose sur l'application Play.
+Le manifeste release non signe a ete controle : PASS.
+Ce manifeste n'est pas un AAB signe.
+
+
+3. IDENTITE DECLAREE PAR L'EDITEUR
+
+Ces elements viennent des echanges. Ils n'ont pas ete relus dans la Play Console
+ni dans le profil Google Payments.
+
+Editeur                         Thierry Naud
+Qualite                         Personne physique
+Entreprise                      Aucune societe, aucune entreprise individuelle immatriculee
+SIREN / SIRET                   Aucun. Ne pas en creer.
+Projet                          Sentinel Quantum Vanguard Ai Pro
+Application de cette politique  Sentinel Phone Core
+Nom annonce pour la fiche       Sentinel Quantum Pro
+                                Ce nom n'est pas dans le depot et n'a pas ete relu dans la Console.
+Compte Google Play              Personnel, deja cree. Ne pas en ouvrir un second.
+Statut Play declare             Non-professionnel / non-trader, etabli dans les echanges du 4 novembre 2026.
+                                Ce n'est pas une autorisation permanente. Il doit rester exact.
+Adresse declaree                227 rue du Docteur Ledentu
+Commune                         Morne-a-l'Eau
+Code postal de la commune       97111
+Pays                            Guadeloupe, France
+Controle public de l'adresse    Non fait. Une recherche du 18 novembre 2026 n'a pas retrouve cette formulation.
+                                L'adresse n'a pas ete remplacee par une autre.
+E-mail                          SentinelQuantumVanguardAiPro@gmail.com
+                                Gmail ignore les majuscules. La boite n'a pas ete testee par un envoi.
+Telephone                       +33 6 52 21 58 72
+                                Ecriture internationale de +33652215872.
+
+Offre confirmee pour le lancement public de cette version :
+
+- application gratuite ;
+- aucun abonnement ;
+- aucun achat integre ;
+- aucun paiement dans l'application ;
+- aucune publicite prevue ;
+- aucun compte utilisateur prevu.
+
+Cette decision produit ne cree pas un statut professionnel.
+
+
+4. CE QUI MANQUE ENCORE POUR FERMER L'IDENTITE
+
+- Delegue a la protection des donnees : nom et contact, ou la mention exacte « non designe ».
+- Base juridique de chaque traitement. Les brouillons ne la choisissent pas.
+- Autorite de reclamation et pays.
+- Duree de conservation des journaux de connexion de l'hebergeur des catalogues,
+  et acces ou non de l'editeur a ces journaux.
+- Nom, adresse et telephone de Cloudflare, repris de sa notice, pas de memoire.
+- Preuve que l'hebergeur detient deja le nom, le domicile et le telephone
+  si l'edition reste non professionnelle.
+- Verification que le profil Payments contient exactement Thierry Naud,
+  227 rue du Docteur Ledentu, Morne-a-l'Eau, et +33 6 52 21 58 72.
+- Verification d'identite du compte : pas de confirmation.
+- Date de creation du compte : pas lue dans la Console.
+  Si le compte a ete cree apres le 13 novembre 2023, Google demande 12 testeurs
+  inscrits 14 jours consecutifs avant l'acces production.
+- Nom exact affiche sur la fiche Play.
+- Surveillance reelle de la boite Gmail : non testee.
+
+Pour une application gratuite sur un compte personnel, l'aide Play indique que le public
+voit le nom legal, le pays et l'e-mail. L'adresse complete est affichee si l'application
+est monetisee. Cette version n'est pas monetisee. Le telephone du compte est demande
+a l'inscription. Il n'est pas, d'apres cette page, un champ public de la fiche gratuite.
+Il est quand meme inscrit dans les brouillons, parce qu'il a ete fourni.
+
+
+5. TROIS REGIMES, TROIS EXIGENCES
+
+Ils ne disent pas la meme chose. Le statut non-trader de Play ne tranche pas le droit francais.
+
+Politique de confidentialite, article 13 du RGPD
+  Deja tenu : identite, e-mail, adresse declaree, telephone declare.
+  Manque : delegue ou « non designe », base juridique, autorite, duree des journaux d'hebergement.
+
+Mentions d'un service en ligne, article 1-1 de la loi n° 2004-575 du 21 juin 2004
+  Texte lu sur Legifrance le 18 novembre 2026.
+  Une personne dont l'activite est d'editer un service en ligne indique nom, prenoms,
+  domicile et telephone, et le numero d'inscription seulement si elle est immatriculee.
+  Une personne qui edite a titre non professionnel peut ne montrer au public que l'hebergeur,
+  si l'hebergeur detient deja le nom, le domicile et le telephone.
+  Le statut non-trader va dans ce sens. Il ne prouve pas la qualification non professionnelle.
+  Une distribution publique reguliere peut etre requalifiee.
+  Manque : coordonnees de l'hebergeur reprises de sa notice, et la preuve qu'il detient deja
+  les elements de l'editeur si l'edition reste non professionnelle.
+
+Google Play Console, compte personnel
+  Deja declare ici : nom, e-mail, adresse, telephone, application gratuite.
+  Manque : relecture du profil Payments et de la fiche.
+  Page : https://support.google.com/googleplay/android-developer/answer/13628312
+
+Hebergeur du site public : Cloudflare Pages, projet sentinel-quantum-vanguard-ai-pro,
+branche publiee main. Les coordonnees postales et telephoniques de Cloudflare
+ne sont pas recopiees de memoire.
+
+
+6. BRANCHES, COMMITS ET DEMANDES
+
+Branche documentaire : cursor/v1-play-compliance-20261118-c39e
+PR documentaire : https://github.com/teetee971/SentinelQuantumVanguardAiPro/pull/1768
+Tete documentaire : 29a207f07
+
+Branche des correctifs et de l'identite : cursor/v1-p0-privacy-catalog-c39e
+PR de correction : https://github.com/teetee971/SentinelQuantumVanguardAiPro/pull/1769
+Tete avant l'ecriture de ce rapport : c10d516f4dce4957c91e21a5d3f3e97ce44877e2
+Ce rapport est ajoute sur cette branche.
+
+PR d'audit des appels, non modifiee : https://github.com/teetee971/SentinelQuantumVanguardAiPro/pull/1767
+
+La PR 1769 est empilee sur la PR 1768. Aucune des deux n'est fusionnee.
+Les messages de commit contiennent [skip ci]. Le controle GitHub execute sur ces commits
+est un controle de secrets. Ce n'est pas la suite Android.
+Le controle du commit c10d516f4 s'est termine sans echec.
+
+Commits de ce travail, du plus recent au plus ancien, avant ce rapport :
+
+c10d516f4  Telephone declare +33 6 52 21 58 72
+47ed8ba1e  Voie declaree : 227 rue du Docteur Ledentu, Morne-a-l'Eau
+79bb03134  Commune Morne-a-l'Eau, sans la presenter comme une rue
+2b4e0f6e0  Identite editeur sans adresse de voie
+e2fc1ae2d  Premiere copie de ce rapport, desormais remplacee
+5a907c043  Exclusion de la sauvegarde Android ancienne, en plus de allowBackup false
+c4c225a1a  Tests de course des catalogues
+f7809d8f4  Blocage des telechargements de catalogues sans interrupteur
+29a207f07  Audit contradictoire. SMS et appels operateur retires de la collecte developpeur
+14bc14398  Offre gratuite et compte personnel
+dfb0e84ac  Premiers brouillons Play
+
+Base de reference du profil V1 : 113862500b9579e2ce476c190ad3195f676ffdda
+
+
+7. ANOMALIES
+
+A1  P0  BLOQUE
+    Le bouton ouvre la politique de vitrine.
+    VERIFIED_V1_URL est nul dans CommercialPrivacyPolicyLink.kt.
+    url() renvoie donc :
+    https://sentinelquantumvanguardaipro.pages.dev/public/privacy.html
+    L'ecran affiche que la politique Phone Core V1 n'a pas d'adresse HTTPS verifiee.
+    Cloudflare Pages ne construit que la branche main.
+    Le 18 novembre 2026, les URL candidates de la politique V1 repondaient HTTP 200
+    avec la coquille graphique du site, pas le texte V1.
+    La page V1 n'a pas ete publiee. La publier avec le delegue et la base juridique vides
+    l'aurait presentee comme definitive.
+
+A2  P0  CORRIGE DANS LE SOURCE. NON EXECUTE SUR TELEPHONE.
+    La fiche d'appel passe isPublishedCatalogRefreshEnabled().
+    loadDirectory leve CatalogNetworkDisabled avant tout HTTP si l'interrupteur est faux.
+
+A3  P0  CORRIGE DANS LE SOURCE. NON EXECUTE SUR TELEPHONE.
+    La recherche du composeur passe le meme interrupteur.
+
+A4  P0  OUVERT
+    Pas d'AAB signe. KEYSTORE_FILE absent. Aucune cle creee.
+    Pas de Galaxy S24+. Pas de capture reseau sur appareil.
+
+B1  P1  CORRIGE DANS LE TEXTE
+    Une version precedente classait les SMS et les appels comme collectes par le developpeur
+    parce que l'operateur les transporte. Cette classification est retiree.
+    Aucun code V1 relu n'envoie ces contenus a un serveur Sentinel.
+    Risque residuel : un relecteur Play peut lire le mot « collect » plus largement.
+
+B2  P1  OUVERT
+    Auth0, LiveKit, WireGuard et Wear restent des dependances Gradle.
+    Leurs composants connus sont retires du manifeste source V1.
+    Leur absence a l'execution n'est pas demontree sur un AAB.
+
+B3  P1  NON VERIFIE EN CONSOLE
+    Le statut non-trader de novembre n'a pas ete relu.
+    Un faux non-trader peut mener au retrait. Le statut doit rester exact.
+
+B4  P1  PARTIELLEMENT REMPLI, A1 TOUJOURS BLOQUE
+    Telephone, adresse, nom et e-mail sont inscrits.
+    Il manque le delegue, la base juridique, l'URL publique verifiee,
+    et un controle independant de l'adresse.
+
+B5  P1  NON VERIFIE EN CONSOLE
+    Le titre annonce « Sentinel Quantum Pro » et le libelle V1 « Sentinel Phone Core »
+    ne sont pas alignes dans une fiche relue.
+
+C1  P2  OUVERT, HORS GRAPHE V1
+    public/terms.html, public/cgv.html et public/pricing.html decrivent encore des offres payantes.
+    Ne pas les copier sur la fiche Phone Core.
+
+C2  P2  PAS DE CAPTURE RESEAU
+    WANGIRI_API_BASE_URL reste compile vers sentinel-moteur-api.onrender.com.
+    L'appel de reputation relu est coupe par COMMERCIAL_PHONE_CORE_V1.
+
+
+8. POLITIQUE DE CONFIDENTIALITE
+
+Fichiers :
+- docs/v1-commercial/play/politique-confidentialite-v1.md
+- docs/v1-commercial/play/politique-confidentialite-v1.html
+
+Le brouillon decrit le profil V1 : telephone, filtrage, SMS/MMS, contacts,
+catalogues ARCEP et RTR, absence de compte, d'abonnement, de paiement et de publicite.
+Il nomme Thierry Naud, l'adresse, l'e-mail et le telephone comme declarations.
+La derniere mise a jour portee sur la page est le 18 novembre 2026.
+La page reste un brouillon. Elle ne doit pas etre publiee telle quelle.
+
+Champs encore marques a completer :
+
+- delegue a la protection des donnees, ou « non designe » ;
+- duree de conservation des journaux de l'hebergeur des catalogues ;
+- base juridique de chaque traitement ;
+- autorite de reclamation ;
+- URL HTTPS publique, sans geoblocage, qui n'est pas un PDF.
+
+Deploiement reel, lu dans la configuration Cloudflare du depot :
+
+- projet : sentinel-quantum-vanguard-ai-pro
+- branche publiee : main
+- commande : npm run build
+- sortie : frontend/dist
+- le dossier public/ est copie dans cette sortie
+- URL connue : https://sentinelquantumvanguardaipro.pages.dev/
+
+Controle HTTP du 18 novembre 2026 :
+
+- /public/privacy.html sert la politique de vitrine de septembre 2026.
+- Les adresses candidates de la politique V1 repondent par la coquille du site.
+
+Code :
+- CommercialPrivacyPolicyLink.kt : VERIFIED_V1_URL = null
+- CommercialPhoneCoreScreens.kt ouvre url() et affiche l'avertissement
+  tant que opensPhoneCorePolicy() est faux.
+- Test CommercialPrivacyPolicyLinkTest : 2 tests, 0 echec, dans la suite du 18 novembre.
+
+La page vitrine public/legal.html a ete mise a jour avec le nom, l'adresse, l'e-mail
+et le telephone. Elle dit elle-meme que les mentions ne sont pas definitives,
+parce que les coordonnees completes de l'hebergeur manquent.
+Cette page decrit la vitrine web, pas la politique Phone Core V1.
+Elle n'a pas ete publiee : Cloudflare ne publie que main, et cette branche n'est pas main.
+
+
+9. CATALOGUES ARCEP ET RTR
+
+Avant f7809d8f4, CallerIdActivity lancait un telechargement a l'ouverture de la fiche,
+apres le filtrage, sans lire l'interrupteur. SentinelDialerActivity faisait de meme
+lors d'une recherche. ArcepDirectoryClient telechargeait si aucune copie n'etait en memoire.
+
+Apres correction :
+
+- lookup et refreshFromNetwork prennent un controle networkPermitted.
+  La valeur par defaut est faux.
+- Le controle est relu apres la reponse. Si l'interrupteur a ete coupe,
+  le document n'est ni mis en memoire ni enregistre.
+- La fiche d'appel, le composeur, PhoneSecurityScreen et PublishedNumberCatalogWorker
+  passent isPublishedCatalogRefreshEnabled().
+- Une copie deja acceptee en memoire reste lisible interrupteur coupe.
+- SentinelApplication.onCreate ne lance pas ce reseau.
+  Le worker n'est arme que si l'interrupteur est vrai, puis il le reverifie.
+- SentinelCallScreeningService n'appelle pas ces clients.
+  Le delai de filtrage n'est pas allonge par un GET.
+
+Limite, ecrite dans le client : l'appel OkHttp est synchrone.
+La coupure n'appelle pas Call.cancel(). Des octets deja partis peuvent arriver.
+Ils sont jettes. Une desactivation n'arrete donc pas immediatement tout trafic.
+
+La revocation du role Telephone ou SMS ne coupe pas, a elle seule, ce telechargement.
+Ce sont deux autorisations distinctes.
+
+La requete est un GET HTTPS de l'URL fixe, en-tete Accept: application/json, sans numero.
+Le numero est compare ensuite sur le telephone.
+
+URL :
+- https://sentinelquantumvanguardaipro.pages.dev/public/data/arcep-numbering.json
+- https://sentinelquantumvanguardaipro.pages.dev/public/data/rtr-numbering.json
+
+L'adresse IP n'est pas lue par l'application. Elle est visible par l'hote.
+La duree de conservation de ces journaux est inconnue.
+
+Les paragraphes des brouillons qui disaient encore qu'une recherche manuelle
+telechargeait meme interrupteur coupe ont ete alignes sur ce comportement
+dans le meme lot que ce rapport.
+
+Tests qui comptent les interceptions HTTP. PublishedCatalogNetworkGateTest :
+10 tests, 0 echec, inclus dans la suite de 1 677 tests.
+
+Situation                                      Resultat du test
+Interrupteur coupe avant la recherche          0 requete
+Interrupteur ouvert                            1 requete, puis lecture locale sans nouveau GET
+Coupure juste avant le GET                     0 requete
+Coupure pendant le transfert                   1 requete se termine, document non conserve
+Reponse tardive apres coupure                  meme constat
+Deux recherches simultanees autorisees         1 seul GET, deux resultats
+Refus puis reactivation                        le GET n'a lieu qu'apres reactivation
+HTTP 503, corps invalide, delai 200 ms         rien n'est conserve
+Service de filtrage                            ne reference ni ARCEP, ni RTR, ni ce telechargement
+
+
+10. PERMISSIONS ET ROLES
+
+Permissions retenues par le manifeste fusionne release non signe :
+CALL_PHONE, READ_CALL_LOG, READ_PHONE_STATE, READ_CONTACTS, POST_NOTIFICATIONS,
+USE_FULL_SCREEN_INTENT, SEND_SMS, RECEIVE_SMS, READ_SMS, RECEIVE_MMS, RECEIVE_WAP_PUSH,
+INTERNET, ACCESS_NETWORK_STATE, WAKE_LOCK.
+
+Absents de ce XML : RECORD_AUDIO, camera, position, Wi-Fi, Bluetooth, Auth0, LiveKit,
+WireGuard, Wear, facturation, identifiant publicitaire.
+
+WRITE_SMS, WRITE_CALL_LOG et PROCESS_OUTGOING_CALLS ne sont pas declarees.
+
+Roles dans le source :
+- ROLE_DIALER
+- ROLE_SMS
+- ROLE_CALL_SCREENING a partir d'Android 10
+- avant Android 10, le filtrage propose passe par l'application Telephone par defaut
+
+Regle Play lue le 18 novembre 2026 : le gestionnaire par defaut doit detenir le role
+avant la demande de permission, et cesser l'usage au retrait du role.
+Le filtrage ne justifie pas READ_CALL_LOG.
+READ_CALL_LOG sert aux appels recents du composeur, apres le role Telephone.
+Les permissions SMS/MMS sont reservees au role SMS.
+
+Le formulaire de declaration Play est redige en brouillon.
+Il n'est pas soumis. Aucune video de demonstration n'a ete enregistree.
+
+
+11. DATA SAFETY
+
+Brouillon non soumis : docs/v1-commercial/play/data-safety-v1.md
+
+Definition Play utilisee : collecter signifie transmettre hors du telephone,
+y compris par une bibliotheque. Le traitement seulement local n'est pas une collecte.
+
+A ne pas declarer comme collectes par le developpeur, sur la preuve actuelle :
+contacts, journal d'appels, SMS stockes, photos, audio, micro, position,
+journaux de plantage, identifiant publicitaire, informations financieres.
+Les SMS et les appels remis a Android puis a l'operateur ne sont pas une collecte
+du developpeur. L'export de 100 SMS est une action choisie vers l'application
+que la personne designe. Ne pas le declarer comme un partage vers l'editeur.
+Ne pas repondre « chiffre de bout en bout » pour les SMS ou la voix.
+
+Point ouvert : le GET des catalogues sort du telephone.
+Ne pas cocher « aucune donnee ne sort ».
+Ne pas cocher « identifiant d'appareil collecte » tant que l'usage de l'adresse IP
+par l'hote n'est pas etabli.
+
+Reponses proposees, non soumises :
+- annonces : non
+- fonctions financieres : aucune
+- creation de compte : non
+- chiffrement en transit de toute collecte : ne pas repondre tant que le perimetre
+  de collecte n'est pas fige. Le GET des catalogues est en HTTPS.
+
+Aucune dependance play-services-ads ni Billing dans les Gradle du module.
+Cela ne prouve pas l'absence d'une dependance transitive dans l'AAB signe.
+Aucune capture reseau du binaire n'a ete faite.
+
+
+12. SAUVEGARDE
+
+allowBackup = false
+dataExtractionRules exclut le domaine de l'application.
+fullBackupContent pointe vers backup_rules.xml, qui exclut root, file, database,
+sharedpref et external.
+Cela couvre Android 7 a 11, ou fullBackupContent est lu, et Android 12 et suivants,
+ou les regles d'extraction sont lues.
+Le test BackupExclusionContractTest verifie ce cablage.
+Le comportement reel de la sauvegarde Android n'a pas ete observe sur un telephone.
+
+
+13. CE QUE LE PROFIL V1 CONTIENT, ET CE QU'IL LAISSE COMPILER
+
+Le graphe V1 ouvre l'accueil, le telephone, les SMS, les contacts, la recherche,
+le filtrage, les listes, l'historique et les parametres V1.
+Il n'ouvre pas l'ecran de connexion Auth0.
+Les activites Auth0 sont retirees du manifeste V1.
+Les classes Auth0 restent dans les sources communes.
+
+Le graphe releaseUnsignedRuntimeClasspath contient encore :
+- io.livekit:livekit-android:2.29.0
+- com.auth0.android:auth0:3.21.1-beta.0
+- com.wireguard.android:tunnel:1.0.20260102
+- com.google.android.gms:play-services-wearable:20.0.1
+
+Pas de play-services-ads ni de bibliotheque Billing dans ce graphe.
+Leur presence dans le graphe ne signifie pas qu'un ecran V1 les ouvre.
+Leur absence dans le XML fusionne ne prouve pas qu'une classe compilee ne s'execute jamais.
+Aucune dependance n'a ete retiree : le source commun les compile encore.
+Les retirer casserait cette compilation, y compris pour le profil V1.
+
+Reputation distante : CallerIdActivity force enrichmentEnabled a faux en V1.
+CallRuleSyncConfig.SYNC_ENABLED est false.
+
+Le filtrage local conserve au plus 500 decisions : action, motif code, source, heure,
+et une empreinte HMAC-SHA256 du numero. La cle HMAC est une cle non exportable
+du coffre Android. Le numero en clair n'est pas ecrit dans cet historique.
+
+
+14. TESTS EXECUTES
+
+Profil : -PsentinelCommercialV1=true
+Date : 18 novembre 2026
+Machine : environnement de revue, pas un telephone.
+
+Commande, apres le correctif de sauvegarde :
+
+bash gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest
+
+Resultat : 350 suites, 1677 tests, 0 echec, 0 erreur, 0 ignore.
+Les modules Wear ne sont pas dans cette commande.
+Les 10 tests de catalogues, les 2 tests du lien de confidentialite
+et le test de sauvegarde en font partie.
+Cette suite n'a pas ete relancee apres les seuls commits documentaires
+d'identite qui ont suivi 5a907c043. Ces commits ne changent pas le code Kotlin.
+
+Lint, sur l'arbre du correctif de sauvegarde :
+
+bash gradlew -PsentinelCommercialV1=true :app:lintDebug
+
+Resultat : succes. 0 erreur. 245 avertissements. 19 indications.
+DataExtractionRules est passe de 1 a 0 apres l'ajout de fullBackupContent.
+
+Compilation :
+compileDebugKotlin : succes, inclus dans les tests.
+compileReleaseUnsignedKotlin : succes sur l'arbre precedent le seul ajout XML
+de sauvegarde. Ce n'est pas un AAB signe.
+
+Manifestes fusionnes :
+
+python3 audit/v1-commercial/validation/check_merged_manifest.py
+
+Debug : PASS. Paquet com.sentinel.quantum.v1validation. 18 permissions, 27 composants.
+Release non signe : PASS. Paquet com.sentinel.quantum. versionName 1.0.9.
+versionCode 10. targetSdk 36.
+
+
+15. TESTS NON EXECUTES
+
+- AAB release signe
+- bundleRelease
+- envoi a Google Play
+- Galaxy S24+
+- appels reels, SMS reels, MMS reels
+- capture reseau sur appareil
+- suite instrumentee
+- tests des modules Wear dans la commande de cette session
+- relecture de la Play Console
+- envoi de message vers SentinelQuantumVanguardAiPro@gmail.com
+- controle qu'une URL publique sert le HTML de la politique V1
+
+Les PASS anciens de audit/v1-commercial/TEST_EVIDENCE.md visent le commit 25c4e2c9.
+Ils ne sont pas repris comme PASS de la tete actuelle.
+
+
+16. LINT RESTANT
+
+245 avertissements. Ils ne sont pas des erreurs.
+
+UseKtx, 92 : style. Non corrige.
+UnusedResources, 57 : ressources non referencees. Pas un chemin d'execution.
+InlinedApi, 25 : constantes d'API recentes, surtout les roles.
+SetTextI18n, 21 : chaines en dur. Pas un defaut de securite.
+Icones, 15 : forme d'icone.
+ApplySharedPref, 9 : commit() est volontaire pour une ecriture durable,
+notamment les retraits de consentement. Conserve.
+PluralsCandidate, 8 : formulation.
+UnusedAttribute, 6 : attributs ignores sous l'API qui les introduit. Attendu avec minSdk 24.
+ObsoleteSdkInt, 4 : controles redondants.
+HardwareIds, 2 : line1Number sert a reconnaitre la propre ligne dans un MMS.
+ANDROID_ID n'est reference que par le Studio voix et les reglages hors graphe V1.
+QueryPermissionsNeeded, 1 : inventaire des applications installees.
+Cet ecran n'est pas dans le graphe V1.
+Autres, 5 : plugin Gradle, parametre Compose, typographie, faute.
+
+
+17. SIGNATURE ET AAB
+
+KEYSTORE_FILE est absent.
+Aucune cle n'a ete creee, affichee, ni inventee.
+bundleRelease n'a pas ete lance.
+L'artefact inspecte est le manifeste releaseUnsigned, pas un AAB signe.
+Aucun artefact n'a ete envoye a Play.
+La cle d'upload deja utilisee par le compte Play, si elle existe, n'est pas dans ce depot.
+Il ne faut pas en creer une nouvelle a la place de celle deja enregistree chez Google.
+
+
+18. RECETTE S24+ ENCORE A FAIRE
+
+Le protocole est dans docs/v1-commercial/play/PROTOCOLE-S24-V1.md.
+Aucune commande n'a ete lancee sur un telephone.
+
+export S24_SERIAL="<serial-adb>"
+export PKG=com.sentinel.quantum.v1validation
+adb -s "$S24_SERIAL" devices -l
+adb -s "$S24_SERIAL" install -r <apk-debug-arm64-v1validation>
+adb -s "$S24_SERIAL" shell dumpsys package "$PKG" | head -n 80
+adb -s "$S24_SERIAL" shell cmd role get-role-holders android.app.role.DIALER
+adb -s "$S24_SERIAL" shell cmd role get-role-holders android.app.role.SMS
+adb -s "$S24_SERIAL" shell cmd role get-role-holders android.app.role.CALL_SCREENING
+adb -s "$S24_SERIAL" logcat -c
+adb -s "$S24_SERIAL" logcat -v time AndroidRuntime:E *:S
+
+A observer sur l'appareil :
+roles accordes puis retires un par un, appel entrant, appel sortant, SMS, MMS,
+fiche d'appel avec l'interrupteur catalogues coupe puis ouvert,
+coupure pendant un GET, et l'URL reellement ouverte par le bouton de confidentialite.
+Le paquet de recette est com.sentinel.quantum.v1validation.
+Le paquet a deposer plus tard est com.sentinel.quantum.
+
+
+19. PAGES PLAY LUES LE 18 NOVEMBRE 2026
+
+https://support.google.com/googleplay/android-developer/answer/13634885
+https://support.google.com/googleplay/android-developer/answer/13628312
+https://support.google.com/googleplay/android-developer/answer/17594752
+https://support.google.com/googleplay/android-developer/answer/14151465
+https://support.google.com/googleplay/android-developer/answer/11926878
+https://support.google.com/googleplay/android-developer/answer/10208820
+https://support.google.com/googleplay/android-developer/answer/10144311
+https://support.google.com/googleplay/android-developer/answer/10787469
+https://support.google.com/googleplay/android-developer/answer/9859455
+https://support.google.com/googleplay/android-developer/answer/13849271
+
+Une personne physique peut publier une application gratuite avec un compte personnel.
+Ce n'est pas une conclusion sur le droit commercial francais.
+Un compte organisation est exige pour le VPN, la finance, la sante ou le gouvernement.
+Le source V1 retire le service VPN. S'il revenait dans l'application publiee,
+le type de compte devrait etre revu.
+
+Depuis le 31 aout 2026, une nouvelle application doit cibler l'API 36.
+Le manifeste non signe annonce targetSdk 36. L'AAB signe n'a pas ete produit.
+
+Texte juridique :
+Reglement (UE) 2016/679
+https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32016R0679
+La page n'a pas ete retéléchargee dans la session du soir.
+La Guadeloupe est traitee ici comme une region francaise ou le RGPD s'applique.
+Cette qualification n'a pas ete relue sur EUR-Lex dans la session du soir.
+
+Loi n° 2004-575 du 21 juin 2004, article 1-1, lue sur Legifrance le 18 novembre 2026 :
+https://www.legifrance.gouv.fr/loda/id/JORFTEXT000000801164/
+
+
+20. FICHIERS DE TRAVAIL
+
+docs/v1-commercial/play/README.md
+docs/v1-commercial/play/politique-confidentialite-v1.md
+docs/v1-commercial/play/politique-confidentialite-v1.html
+docs/v1-commercial/play/mentions-legales-v1.md
+docs/v1-commercial/play/data-safety-v1.md
+docs/v1-commercial/play/declaration-permissions-play.md
+docs/v1-commercial/play/divulgations-visibles-v1.md
+docs/v1-commercial/play/verification-offre-v1.md
+docs/v1-commercial/play/compte-developpeur-personnel.md
+docs/v1-commercial/play/AUDIT-CONTRADICTOIRE-20261118.md
+docs/v1-commercial/play/PROTOCOLE-S24-V1.md
+docs/v1-commercial/play/RAPPORT-COPIABLE-20261118.txt
+public/legal.html
+
+Code touche par les correctifs P0, inchange par les commits d'identite :
+native-android-app/app/src/main/java/com/sentinel/quantum/ui/CommercialPrivacyPolicyLink.kt
+native-android-app/app/src/main/java/com/sentinel/quantum/security/ArcepDirectoryClient.kt
+native-android-app/app/src/main/java/com/sentinel/quantum/security/RtrDirectoryClient.kt
+native-android-app/app/src/main/java/com/sentinel/quantum/security/CatalogNetworkDisabled.kt
+native-android-app/app/src/main/java/com/sentinel/quantum/CallerIdActivity.kt
+native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt
+native-android-app/app/src/main/java/com/sentinel/quantum/background/PublishedNumberCatalogWorker.kt
+native-android-app/app/src/main/AndroidManifest.xml
+native-android-app/app/src/main/res/xml/backup_rules.xml
+
+
+21. ORDRE RESTANT
+
+1. Completer le delegue, ou ecrire « non designe », et la base juridique retenue.
+   Ne pas inventer l'un ni l'autre.
+2. Reprendre les coordonnees de Cloudflare dans sa notice.
+3. Publier la politique V1 sur main seulement quand ces champs sont tenus.
+4. Verifier par un GET HTTPS que l'URL sert le texte V1, pas la coquille du site.
+5. Renseigner alors VERIFIED_V1_URL et retester le bouton.
+6. Fournir la cle d'upload deja utilisee par Play. Ne pas en creer une nouvelle.
+7. Produire l'AAB signe com.sentinel.quantum, versionCode 10,
+   et relancer le controle de manifeste sur cet AAB.
+8. Executer le protocole S24+.
+9. Relire dans la Console le statut non-trader, le profil Payments,
+   le nom de la fiche et la date de creation du compte.
+10. Faire le test ferme sur le compte existant si la date de creation l'exige.
+11. Seulement ensuite, soumettre Data safety, permissions et fiche.
+
+
+22. AFFIRMATIONS QUI NE DOIVENT PAS ETRE REPRISES
+
+- La conformite Play n'est pas acquise.
+- Le statut non-trader n'autorise pas a lui seul le lancement.
+- « Sentinel Quantum Pro » n'est pas etabli par le depot.
+- L'absence de publicite et de paiement est etablie pour les dependances directes lues
+  et pour la decision produit. Elle n'est pas etablie par un AAB signe.
+- Les PASS de TEST_EVIDENCE.md ne couvrent pas la tete actuelle.
+- Les SMS et les appels de l'operateur ne sont pas une collecte du developpeur
+  sur la preuve lue. Cela ne dispense pas de decrire le transport operateur
+  dans la politique.
+- Une adresse et un telephone inscrits dans un brouillon ne sont pas une publication,
+  ni une verification du profil Payments.
+
+
+23. CONCLUSION
+
+Les telechargements de catalogues hors interrupteur sont fermes dans le code
+et couverts par des tests qui comptent les requetes.
+La sauvegarde Android ancienne est exclue comme la sauvegarde recente.
+L'identite declaree est maintenant inscrite : Thierry Naud, personne physique,
+227 rue du Docteur Ledentu, Morne-a-l'Eau, Guadeloupe, France, 97111,
+telephone +33 6 52 21 58 72, e-mail SentinelQuantumVanguardAiPro@gmail.com.
+Aucun numero d'entreprise n'a ete ajoute.
+
+La politique Phone Core V1 n'est pas publiable en l'etat.
+Le bouton ne pretend pas le contraire.
+Le binaire signe, la cle Play et le telephone physique n'ont pas ete qualifies.
+
+Verdict : NO-GO production.
+PR correction : https://github.com/teetee971/SentinelQuantumVanguardAiPro/pull/1769
+PR documents : https://github.com/teetee971/SentinelQuantumVanguardAiPro/pull/1768
+PR appels, non modifiee : https://github.com/teetee971/SentinelQuantumVanguardAiPro/pull/1767

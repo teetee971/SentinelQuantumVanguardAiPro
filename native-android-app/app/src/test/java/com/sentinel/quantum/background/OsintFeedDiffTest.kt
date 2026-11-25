@@ -94,6 +94,27 @@ class OsintFeedDiffTest {
         assertEquals("updated", merged.first { it.link == "https://b" }.title)
     }
 
+    @Test
+    fun aDisabledRssSourceIsNotMergedBack() {
+        val kept = item("https://kept", 10).copy(source = "CERT-FR Alertes")
+        val disabled = item("https://disabled", 5).copy(source = "CERT-FR CTI")
+        val allowed = setOf("CERT-FR Alertes")
+        val merged = OsintFeedDiff.merge(listOf(kept, disabled), listOf(kept))
+        val retained = OsintFeedDiff.retainSources(merged, allowed)
+
+        assertEquals(listOf("https://kept"), retained.map { it.link })
+        assertEquals(null, OsintFeedDiff.notificationBaseline(listOf(disabled), allowed))
+        assertEquals(
+            listOf("https://kept"),
+            OsintFeedDiff.notificationBaseline(listOf(kept, disabled), allowed)?.map { it.link }
+        )
+        assertEquals(null, OsintFeedDiff.retainedCompleteSnapshot(listOf(disabled), allowed))
+        assertEquals(
+            listOf("https://kept"),
+            OsintFeedDiff.retainedCompleteSnapshot(listOf(kept, disabled), allowed)?.map { it.link }
+        )
+    }
+
     private companion object {
         const val BASE_TIME_MS = 1_800_000_000_000L
     }

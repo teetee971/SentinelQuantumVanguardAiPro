@@ -26,8 +26,20 @@ import org.junit.runner.RunWith
 /** Entry and process revocation checks. The held effect is an in-memory fixture. */
 @RunWith(AndroidJUnit4::class)
 class SentinelAiActivityInstrumentationTest {
+
+    companion object {
+        @kotlin.jvm.JvmStatic
+        @get:org.junit.ClassRule
+        val refuseInstalledPackage = com.sentinel.quantum.security.RefuseInstalledPackageRule()
+    }
+
     @Test fun entryRequiresConsentAndDoesNotInitializeJournal() {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        com.sentinel.quantum.security.InstalledDataGuard.assertSafeToRun(
+            instrumentation.targetContext,
+            instrumentation.context
+        )
+        val context = instrumentation.targetContext
         val events = File(context.noBackupFilesDir, "sentinel-ai-audit-v1/events")
         val before = if (events.exists()) events.readBytes() else null
         ActivityScenario.launch(SentinelAiActivity::class.java).use { scenario ->
@@ -46,6 +58,10 @@ class SentinelAiActivityInstrumentationTest {
 
     @Test fun processRevocationBlocksBothActivitiesUntilDrainedAndRequiresNewConsent() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
+        com.sentinel.quantum.security.InstalledDataGuard.assertSafeToRun(
+            instrumentation.targetContext,
+            instrumentation.context
+        )
         val context = instrumentation.targetContext
         assumeTrue("Use the isolated validation package for a test that appends a revocation event",
             context.packageName == SENTINEL_AI_C11_PACKAGE)

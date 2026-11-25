@@ -35,6 +35,7 @@ import com.sentinel.quantum.VoiceStudioActivity
 import com.sentinel.quantum.background.PublishedNumberCatalogScheduler
 import com.sentinel.quantum.background.WorkScheduler
 import com.sentinel.quantum.data.OsintFeedCache
+import com.sentinel.quantum.data.OsintRssConfig
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.data.SentinelPreferencesBackup
 import com.sentinel.quantum.data.SentinelUninstallFlow
@@ -73,6 +74,11 @@ fun SettingsScreen(
         mutableStateOf(settingsStore.isPublishedCatalogRefreshEnabled())
     }
     var intervalHours by remember { mutableStateOf(settingsStore.osintRefreshIntervalHours) }
+    var rssEnabled by remember {
+        mutableStateOf(
+            OsintRssConfig.selection(settingsStore.osintRssSourceNames()).map { it.name }.toSet()
+        )
+    }
     var familySafetyProfile by remember { mutableStateOf(settingsStore.familySafetyProfile) }
     var notificationsEnabled by remember {
         mutableStateOf(
@@ -126,6 +132,7 @@ fun SettingsScreen(
                             callerReputationEnrichmentEnabled = settingsStore.callerReputationEnrichmentEnabled,
                             osintRefreshIntervalHours = settingsStore.osintRefreshIntervalHours,
                             osintNotificationsEnabled = settingsStore.osintNotificationsEnabled,
+                            osintRssSources = settingsStore.osintRssSourceNames(),
                             smsNotificationPreviewEnabled = settingsStore.smsNotificationPreviewEnabled,
                             blockedPrefixes = blocklistStore.snapshot().blockedPrefixes.sorted()
                         )
@@ -185,6 +192,7 @@ fun SettingsScreen(
                                     decoded.callerReputationEnrichmentEnabled,
                                 osintRefreshIntervalHours = decoded.osintRefreshIntervalHours,
                                 osintNotificationsEnabled = decoded.osintNotificationsEnabled,
+                                osintRssSources = decoded.osintRssSources,
                                 smsNotificationPreviewEnabled = decoded.smsNotificationPreviewEnabled
                             )
                         )
@@ -216,6 +224,7 @@ fun SettingsScreen(
                     familySafetyProfile = restored.familySafetyProfile
                     onThemeModeChange(restored.themeMode)
                     intervalHours = restored.osintRefreshIntervalHours
+                    rssEnabled = OsintRssConfig.selection(restored.osintRssSources).map { it.name }.toSet()
                     notificationsEnabled = restored.osintNotificationsEnabled &&
                         (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
                             ContextCompat.checkSelfPermission(
@@ -473,6 +482,37 @@ fun SettingsScreen(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(text = intervalLabel(hours))
+                }
+            }
+            Text(
+                text = stringResource(R.string.settings_osint_rss_title),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = stringResource(R.string.settings_osint_rss_note),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            OsintRssConfig.rssSources().forEach { source ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = source.displayName,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Switch(
+                        checked = source.name in rssEnabled,
+                        onCheckedChange = { enabled ->
+                            val next = if (enabled) rssEnabled + source.name else rssEnabled - source.name
+                            rssEnabled = next
+                            settingsStore.setOsintRssSources(OsintRssConfig.selection(next))
+                        }
+                    )
                 }
             }
             Row(

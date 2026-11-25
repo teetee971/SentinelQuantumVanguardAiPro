@@ -31,7 +31,7 @@ android {
             manifestPlaceholders.sentinelV1Label = "Sentinel Phone Core"
         }
 
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "com.sentinel.quantum.security.SentinelPreservationInstrumentationRunner"
         vectorDrawables {
             useSupportLibrary = true
         }

@@ -1,28 +1,28 @@
 # Product capability status — generated
 
-Source: `config/product-capabilities.json` · updated 2026-10-05.
+Source: `config/product-capabilities.json` · updated 2026-11-25.
 
 This file is generated. Do not promote a capability by editing this document; update the canonical registry with evidence and let CI validate the invariants.
 
 | Capability | Status | Customer available | Open blockers | Evidence revision | Observed at |
 |---|---|---:|---:|---|---|
 | Android Phone Core | IMPLEMENTED_NOT_VERIFIED | NO | 2 | Not attested | Not observed |
-| Sentinel VPN | IMPLEMENTED_NOT_CONFIGURED | NO | 3 | Not attested | Not observed |
-| Voice Studio transformed calls | IMPLEMENTED_NOT_CONFIGURED | NO | 3 | Not attested | Not observed |
-| GeoIntel USGS earthquakes | IMPLEMENTED_NOT_VERIFIED | NO | 1 | Not attested | Not observed |
+| Sentinel VPN | EXCLUDED_FROM_COMMERCIAL_V1 | NO | 4 | Not attested | Not observed |
+| Voice Studio transformed calls | EXCLUDED_FROM_COMMERCIAL_V1 | NO | 4 | Not attested | Not observed |
+| GeoIntel USGS earthquakes | EXCLUDED_FROM_COMMERCIAL_V1 | NO | 1 | Not attested | Not observed |
 | GeoIntel conflicts/hotspots/sanctions/weather/outages | NOT_IMPLEMENTED | NO | 1 | Not attested | Not observed |
-| Collective Defense API | IMPLEMENTED_NOT_VERIFIED | NO | 1 | Not attested | Not observed |
-| Collective Defense Android center | IMPLEMENTED_NOT_VERIFIED | NO | 2 | Not attested | Not observed |
-| Signed Phone Intelligence reputation feed | IMPLEMENTED_NOT_CONFIGURED | NO | 3 | Not attested | Not observed |
-| Phone Intelligence moderation service | IMPLEMENTED_NOT_CONFIGURED | NO | 2 | Not attested | Not observed |
-| Repository-wide internationalization | IMPLEMENTED_NOT_CONFIGURED | NO | 2 | Not attested | Not observed |
-| Android distribution legal and Play compliance | IMPLEMENTED_NOT_CONFIGURED | NO | 4 | Not attested | Not observed |
-| Public signed Android release | IMPLEMENTED_NOT_CONFIGURED | NO | 3 | Not attested | Not observed |
+| Collective Defense API | EXCLUDED_FROM_COMMERCIAL_V1 | NO | 1 | Not attested | Not observed |
+| Collective Defense Android center | EXCLUDED_FROM_COMMERCIAL_V1 | NO | 3 | Not attested | Not observed |
+| Signed Phone Intelligence reputation feed | EXCLUDED_FROM_COMMERCIAL_V1 | NO | 3 | Not attested | Not observed |
+| Phone Intelligence moderation service | EXCLUDED_FROM_COMMERCIAL_V1 | NO | 2 | Not attested | Not observed |
+| Repository-wide internationalization | EXCLUDED_FROM_COMMERCIAL_V1 | NO | 2 | Not attested | Not observed |
+| Android distribution legal and Play compliance | EXCLUDED_FROM_COMMERCIAL_V1 | NO | 4 | Not attested | Not observed |
+| Public signed Android release | EXCLUDED_FROM_COMMERCIAL_V1 | NO | 3 | Not attested | Not observed |
 | SaaS customer identity and authorization | NOT_IMPLEMENTED | NO | 1 | Not attested | Not observed |
 | Voice signaling, token issuer and VoIP/PSTN gateway | NOT_IMPLEMENTED | NO | 1 | Not attested | Not observed |
-| Independent monotonic VPN lease sequence authority | IMPLEMENTED_NOT_CONFIGURED | NO | 1 | Not attested | Not observed |
-| Mesh control plane and relay runtime | IMPLEMENTED_NOT_CONFIGURED | NO | 1 | Not attested | Not observed |
-| Android public-source OSINT feeds | IMPLEMENTED_NOT_VERIFIED | NO | 1 | Not attested | Not observed |
+| Independent monotonic VPN lease sequence authority | EXCLUDED_FROM_COMMERCIAL_V1 | NO | 1 | Not attested | Not observed |
+| Mesh control plane and relay runtime | EXCLUDED_FROM_COMMERCIAL_V1 | NO | 2 | Not attested | Not observed |
+| Android public-source OSINT feeds | EXCLUDED_FROM_COMMERCIAL_V1 | NO | 2 | Not attested | Not observed |
 
 ## Blocking details
 
@@ -41,6 +41,7 @@ Evidence:
 - Production Sentinel exit gateway is not provisioned
 - Independent PostgreSQL lease sequence authority is implemented but not configured, deployed or runtime-verified
 - End-to-end tunnel, DNS, IPv4/IPv6, MTU and recovery evidence is missing
+- Not exposed by the -PsentinelCommercialV1=true navigation or manifest; this is not an operational customer feature
 
 Evidence:
 - `docs/security/SENTINEL-VPN-ARCHITECTURE.md`
@@ -52,6 +53,7 @@ Evidence:
 - Production LiveKit signaling/token issuer is not provisioned
 - VoIP/PSTN gateway is not provisioned
 - No real transformed call has passed end-to-end physical validation
+- Not exposed by the -PsentinelCommercialV1=true navigation or manifest; this is not an operational customer feature
 
 Evidence:
 - `docs/VOICE-STUDIO-ADDON.md`
@@ -88,6 +90,7 @@ Evidence:
 
 - Merged signed Android release evidence is missing
 - Real-device lookup/report/watch/background-notification evidence is missing
+- Not exposed by the -PsentinelCommercialV1=true navigation or manifest; this is not an operational customer feature
 
 Evidence:
 - `native-android-app/app/src/main/java/com/sentinel/quantum/security/CollectiveDefenseClient.kt`
@@ -181,6 +184,7 @@ Evidence:
 ### Mesh control plane and relay runtime
 
 - Production identity, relay runtime and revocation/data-plane acceptance evidence are not recorded
+- Not exposed by the -PsentinelCommercialV1=true navigation or manifest; this is not an operational customer feature
 
 Evidence:
 - `network/mesh/server.js`
@@ -189,6 +193,7 @@ Evidence:
 ### Android public-source OSINT feeds
 
 - Revision-bound runtime and signed Android distribution evidence are missing
+- Not exposed by the -PsentinelCommercialV1=true navigation or manifest; this is not an operational customer feature
 
 Evidence:
 - `native-android-app/app/src/main/java/com/sentinel/quantum/data/OsintRepository.kt`

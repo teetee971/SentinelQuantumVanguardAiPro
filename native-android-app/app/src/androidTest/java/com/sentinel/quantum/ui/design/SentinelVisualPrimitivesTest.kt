@@ -30,6 +30,13 @@ import org.junit.Rule
 import org.junit.Test
 
 class SentinelVisualPrimitivesTest {
+
+    companion object {
+        @kotlin.jvm.JvmStatic
+        @get:org.junit.ClassRule
+        val refuseInstalledPackage = com.sentinel.quantum.security.RefuseInstalledPackageRule()
+    }
+
     @get:Rule
     val composeRule = createComposeRule()
 

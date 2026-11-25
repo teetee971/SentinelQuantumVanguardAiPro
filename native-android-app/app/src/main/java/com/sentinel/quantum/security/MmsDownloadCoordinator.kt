@@ -165,8 +165,29 @@ object MmsDownloadCoordinator {
         val file = runCatching { File(canonicalDirectory, fileName).canonicalFile }.getOrNull()
             ?: return false
         if (file.parentFile != canonicalDirectory) return false
+        if (removeRecoveryMetadata && file.isFile && file.length() > 0L) {
+            val record = MmsDownloadRecoveryJournal(context.applicationContext).read(fileName)
+            val digest = record?.digestHex
+            val privateCopy = digest?.let { IncomingMmsPrivateStore.read(context.filesDir, it) }
+            val privateCopyMatches = digest != null &&
+                privateCopy != null &&
+                IncomingMmsIdentity.sha256Hex(privateCopy) == digest
+            if (
+                !MmsStagingDeletion.allowed(
+                    stagingBytesPresent = true,
+                    transportFailed = record?.transportFailed == true,
+                    privateCopyMatches = privateCopyMatches
+                )
+            ) {
+                return false
+            }
+        }
         val removed = !file.exists() || runCatching { file.delete() }.getOrDefault(false)
         if (!removed) return false
+        runCatching {
+            val observation = File(file.parentFile, fileName + ".obs")
+            if (observation.isFile) observation.delete()
+        }
 
         // Do not cancel the durable safety nets until the recovery journal is durably retired.
         // Otherwise a SharedPreferences commit failure can strand phantom recovery metadata with no
@@ -207,7 +228,8 @@ object MmsDownloadCoordinator {
         var retired = 0
         directory.listFiles().orEmpty()
             .filter {
-                it.isFile && (
+                it.isFile &&
+                    !it.name.endsWith(".obs") && (
                     it.lastModified() < cutoff ||
                     it.length() > MAX_DOWNLOADED_PDU_BYTES ||
                     !isValidStagedFileName(it.name)

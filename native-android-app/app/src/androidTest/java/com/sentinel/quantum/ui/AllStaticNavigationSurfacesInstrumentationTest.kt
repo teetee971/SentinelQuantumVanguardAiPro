@@ -16,6 +16,13 @@ import org.junit.Test
  * permission, provider, service, backend, radio or optional capability is unavailable.
  */
 class AllStaticNavigationSurfacesInstrumentationTest {
+
+    companion object {
+        @kotlin.jvm.JvmStatic
+        @get:org.junit.ClassRule
+        val refuseInstalledPackage = com.sentinel.quantum.security.RefuseInstalledPackageRule()
+    }
+
     @get:Rule
     val composeRule = createComposeRule()
 

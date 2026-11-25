@@ -34,12 +34,16 @@ internal class MmsDownloadRecoveryJournal(context: Context) {
         val recordKey = key(fileName)
         val existingRaw = preferences.getString(recordKey, null)
         if (existingRaw != null) {
-            val current = decode(fileName, existingRaw) ?: return@synchronized false
-            return@synchronized current.subscriptionId == subscriptionId &&
-                current.requestedAtMs == requestedAtMs
+            val current = decode(fileName, existingRaw)
+            if (current == null) {
+                if (!quarantineUndecodableLocked(fileName, existingRaw)) return@synchronized false
+            } else {
+                return@synchronized current.subscriptionId == subscriptionId &&
+                    current.requestedAtMs == requestedAtMs
+            }
         }
 
-        val activeRecordCount = preferences.all.keys.count { it.startsWith(KEY_PREFIX) }
+        val activeRecordCount = admissionCount()
         if (!canAcceptRecord(existing = false, activeRecordCount = activeRecordCount)) {
             return@synchronized false
         }
@@ -142,11 +146,30 @@ internal class MmsDownloadRecoveryJournal(context: Context) {
             preferences.edit().remove(key(fileName)).commit()
     }
 
+    /**
+     * Copies an undecodable value aside and removes it from the admission set.
+     * Does not delete a staging file. A missing key is a no-op.
+     */
+    fun quarantineUndecodable(fileName: String): Boolean = synchronized(LOCK) {
+        if (!MmsDownloadCoordinator.isValidStagedFileName(fileName)) return@synchronized false
+        val raw = preferences.getString(key(fileName), null) ?: return@synchronized false
+        if (decode(fileName, raw) != null) return@synchronized false
+        quarantineUndecodableLocked(fileName, raw)
+    }
+
     fun all(): List<Record> = synchronized(LOCK) {
         preferences.all.asSequence()
             .filter { (name, _) -> name.startsWith(KEY_PREFIX) }
             .mapNotNull { (name, value) -> decode(name.removePrefix(KEY_PREFIX), value) }
-            .sortedBy { it.requestedAtMs }
+            .sortedWith(
+                compareBy<Record> {
+                    !MmsDownloadJournalAdmission.countsTowardCap(
+                        decodable = true,
+                        privateMissCount = it.privateMissCount,
+                        transportFailed = it.transportFailed
+                    )
+                }.thenBy { it.requestedAtMs }
+            )
             .take(MAX_RECORDS)
             .toList()
     }
@@ -178,11 +201,31 @@ internal class MmsDownloadRecoveryJournal(context: Context) {
         transportFailed = transportFailed
     )
 
+    private fun admissionCount(): Int =
+        preferences.all.entries.count { (name, value) ->
+            if (!name.startsWith(KEY_PREFIX)) return@count false
+            val decoded = decode(name.removePrefix(KEY_PREFIX), value)
+            MmsDownloadJournalAdmission.countsTowardCap(
+                decodable = decoded != null,
+                privateMissCount = decoded?.privateMissCount ?: 0,
+                transportFailed = decoded?.transportFailed ?: false
+            )
+        }
+
+    private fun quarantineUndecodableLocked(fileName: String, raw: String): Boolean {
+        val preserved = QUARANTINE_PREFIX + fileName + "." + raw.hashCode().toUInt().toString(16)
+        return preferences.edit()
+            .putString(preserved, raw)
+            .remove(key(fileName))
+            .commit()
+    }
+
     private fun key(fileName: String) = KEY_PREFIX + fileName
 
     companion object {
         internal const val PREFS_NAME = "sentinel_mms_download_recovery_v1"
         internal const val KEY_PREFIX = "record."
+        internal const val QUARANTINE_PREFIX = "quarantine."
         private const val SCHEMA_VERSION = MmsDownloadJournalMutation.SCHEMA_VERSION
         internal const val MAX_RECORDS = 64
         private val LOCK = Any()

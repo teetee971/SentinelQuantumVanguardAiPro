@@ -52,6 +52,9 @@ import com.sentinel.quantum.security.CommunicationReputationWriter
 import com.sentinel.quantum.security.SharedPreferencesCommunicationReputationStorage
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.ArcepDirectoryClient
+import com.sentinel.quantum.security.CATALOG_LOCAL_COPY_ABSENT
+import com.sentinel.quantum.security.CatalogNetworkDisabled
+import com.sentinel.quantum.security.PublishedNumberCatalogStore
 import com.sentinel.quantum.security.RtrDirectoryClient
 import com.sentinel.quantum.security.ExplainableAI
 import com.sentinel.quantum.security.LocalLogger
@@ -399,22 +402,37 @@ fun PhoneSecurityScreen(navController: NavController) {
                             if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber)) return@launch
                             intelligencePresentation = snapshotPresentation
                             val isAustria = RtrDirectoryClient.normalize(candidate) != null
+                            val networkPermitted = {
+                                SettingsStore(context.applicationContext).isPublishedCatalogRefreshEnabled()
+                            }
                             if (isAustria) {
-                                val lookup = withContext(Dispatchers.IO) { runCatching { RtrDirectoryClient().lookup(candidate) } }
+                                val lookup = withContext(Dispatchers.IO) {
+                                    PublishedNumberCatalogStore.bind(context.applicationContext)
+                                    runCatching { RtrDirectoryClient().lookup(candidate, networkPermitted) }
+                                }
                                 if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber)) return@launch
                                 directoryRunning = false
                                 lookup.onSuccess {
                                     rtrResult = it
                                     arcepStatus = if (it != null && it.matches.isNotEmpty()) "Attribution RTR trouvée" else "Aucune attribution RTR correspondante"
-                                }.onFailure { arcepStatus = "Annuaire RTR temporairement indisponible" }
+                                }.onFailure { error ->
+                                    arcepStatus = if (error is CatalogNetworkDisabled) CATALOG_LOCAL_COPY_ABSENT
+                                    else "Annuaire RTR temporairement indisponible"
+                                }
                             } else {
-                                val lookup = withContext(Dispatchers.IO) { runCatching { ArcepDirectoryClient().lookup(candidate) } }
+                                val lookup = withContext(Dispatchers.IO) {
+                                    PublishedNumberCatalogStore.bind(context.applicationContext)
+                                    runCatching { ArcepDirectoryClient().lookup(candidate, networkPermitted) }
+                                }
                                 if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber)) return@launch
                                 directoryRunning = false
                                 lookup.onSuccess {
                                     arcepResult = it
                                     arcepStatus = if (it != null) "Attribution ARCEP trouvée" else "Aucune attribution ARCEP correspondante"
-                                }.onFailure { arcepStatus = "Annuaire ARCEP temporairement indisponible" }
+                                }.onFailure { error ->
+                                    arcepStatus = if (error is CatalogNetworkDisabled) CATALOG_LOCAL_COPY_ABSENT
+                                    else "Annuaire ARCEP temporairement indisponible"
+                                }
                             }
                         }
                     }

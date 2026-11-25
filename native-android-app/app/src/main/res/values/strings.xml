@@ -77,9 +77,11 @@
 
     <string name="settings_title">Paramètres</string>
     <string name="settings_osint_section">Veille OSINT</string>
-    <string name="settings_osint_description">Vérification périodique des flux publics en arrière-plan, puis notification locale en cas de nouvelle alerte.</string>
+    <string name="settings_osint_description">Vérification optionnelle de flux publics, désactivée par défaut. Hors profil commercial V1. Non qualifiée sur appareil.</string>
     <string name="settings_osint_interval_never">Jamais</string>
     <string name="settings_osint_interval_hours">Toutes les %1$d h</string>
+    <string name="settings_osint_rss_title">Flux RSS</string>
+    <string name="settings_osint_rss_note">Chaque interrupteur ne lit que l’adresse publique déjà autorisée. Aucune donnée de fiche n’est envoyée. NVD et CISA KEV ne sont pas des flux RSS.</string>
     <string name="settings_osint_notifications">Notifications de veille OSINT</string>
     <string name="settings_osint_notifications_enabled">Notifications OSINT activées.</string>
     <string name="settings_osint_permission_denied">Permission refusée : les alertes resteront désactivées.</string>
@@ -314,6 +316,7 @@
     <string name="call_history_clear">Effacer</string>
     <string name="call_history_privacy">Historique local limité à 500 décisions. Aucun numéro brut ou masqué n’est conservé : seule une empreinte HMAC non exportable liée au coffre sécurisé de clés Android peut relier localement des décisions. Les détails d’origine d’un ancien appel ne peuvent pas être reconstruits depuis cette empreinte ; la fiche d’identification affiche ces renseignements pendant l’appel.</string>
     <string name="call_history_empty">Aucune décision de filtrage enregistrée.</string>
+    <string name="call_history_preserved_closed">Historique non ouvert. Le fichier local a été laissé intact et aucune décision n’a été effacée.</string>
     <string name="call_history_reason">Origine de la décision : %1$s — raison : %2$s</string>
     <string name="call_history_unknown_number">Identifiant indisponible</string>
     <string name="call_history_private_identifier">Empreinte privée présente — numéro non conservé</string>
