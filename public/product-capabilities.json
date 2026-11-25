@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-10-05",
+  "updated_at": "2026-11-25",
   "capabilities": [
     {
       "id": "phone_core_android",
@@ -15,7 +15,7 @@
     {
       "id": "sentinel_vpn_service",
       "surface": "Sentinel VPN",
-      "status": "IMPLEMENTED_NOT_CONFIGURED",
+      "status": "EXCLUDED_FROM_COMMERCIAL_V1",
       "implemented": true,
       "customer_available": false,
       "evidence_sha": null,
@@ -25,7 +25,7 @@
     {
       "id": "voice_transform_calls",
       "surface": "Voice Studio transformed calls",
-      "status": "IMPLEMENTED_NOT_CONFIGURED",
+      "status": "EXCLUDED_FROM_COMMERCIAL_V1",
       "implemented": true,
       "customer_available": false,
       "evidence_sha": null,
@@ -35,7 +35,7 @@
     {
       "id": "geointel_usgs",
       "surface": "GeoIntel USGS earthquakes",
-      "status": "IMPLEMENTED_NOT_VERIFIED",
+      "status": "EXCLUDED_FROM_COMMERCIAL_V1",
       "implemented": true,
       "customer_available": false,
       "evidence_sha": null,
@@ -55,7 +55,7 @@
     {
       "id": "collective_defense_backend",
       "surface": "Collective Defense API",
-      "status": "IMPLEMENTED_NOT_VERIFIED",
+      "status": "EXCLUDED_FROM_COMMERCIAL_V1",
       "implemented": true,
       "customer_available": false,
       "evidence_sha": null,
@@ -65,7 +65,7 @@
     {
       "id": "collective_defense_android",
       "surface": "Collective Defense Android center",
-      "status": "IMPLEMENTED_NOT_VERIFIED",
+      "status": "EXCLUDED_FROM_COMMERCIAL_V1",
       "implemented": true,
       "customer_available": false,
       "evidence_sha": null,
@@ -75,7 +75,7 @@
     {
       "id": "signed_phone_reputation_feed",
       "surface": "Signed Phone Intelligence reputation feed",
-      "status": "IMPLEMENTED_NOT_CONFIGURED",
+      "status": "EXCLUDED_FROM_COMMERCIAL_V1",
       "implemented": true,
       "customer_available": false,
       "evidence_sha": null,
@@ -85,7 +85,7 @@
     {
       "id": "phone_moderation_backend",
       "surface": "Phone Intelligence moderation service",
-      "status": "IMPLEMENTED_NOT_CONFIGURED",
+      "status": "EXCLUDED_FROM_COMMERCIAL_V1",
       "implemented": true,
       "customer_available": false,
       "evidence_sha": null,
@@ -95,7 +95,7 @@
     {
       "id": "repository_i18n",
       "surface": "Repository-wide internationalization",
-      "status": "IMPLEMENTED_NOT_CONFIGURED",
+      "status": "EXCLUDED_FROM_COMMERCIAL_V1",
       "implemented": true,
       "customer_available": false,
       "evidence_sha": null,
@@ -105,7 +105,7 @@
     {
       "id": "android_distribution_compliance",
       "surface": "Android distribution legal and Play compliance",
-      "status": "IMPLEMENTED_NOT_CONFIGURED",
+      "status": "EXCLUDED_FROM_COMMERCIAL_V1",
       "implemented": true,
       "customer_available": false,
       "evidence_sha": null,
@@ -115,7 +115,7 @@
     {
       "id": "public_android_release",
       "surface": "Public signed Android release",
-      "status": "IMPLEMENTED_NOT_CONFIGURED",
+      "status": "EXCLUDED_FROM_COMMERCIAL_V1",
       "implemented": true,
       "customer_available": false,
       "evidence_sha": null,
@@ -145,7 +145,7 @@
     {
       "id": "vpn_sequence_authority",
       "surface": "Independent monotonic VPN lease sequence authority",
-      "status": "IMPLEMENTED_NOT_CONFIGURED",
+      "status": "EXCLUDED_FROM_COMMERCIAL_V1",
       "implemented": true,
       "customer_available": false,
       "evidence_sha": null,
@@ -155,7 +155,7 @@
     {
       "id": "mesh_runtime",
       "surface": "Mesh control plane and relay runtime",
-      "status": "IMPLEMENTED_NOT_CONFIGURED",
+      "status": "EXCLUDED_FROM_COMMERCIAL_V1",
       "implemented": true,
       "customer_available": false,
       "evidence_sha": null,
@@ -165,7 +165,7 @@
     {
       "id": "osint_android_feeds",
       "surface": "Android public-source OSINT feeds",
-      "status": "IMPLEMENTED_NOT_VERIFIED",
+      "status": "EXCLUDED_FROM_COMMERCIAL_V1",
       "implemented": true,
       "customer_available": false,
       "evidence_sha": null,
