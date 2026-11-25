@@ -78,6 +78,16 @@ class V25DataPreservationTest {
         assertTrue(source.contains("assertNonDestructive(!allowed)"))
     }
 
+    @Test fun historyScreenCatchesARefusedRoomOpen() {
+        val source = File("src/main/java/com/sentinel/quantum/ui/screens/CallFilterHistoryScreen.kt").readText()
+        assertTrue(source.contains("runCatching { CallFilterLogStore.get(context) }.getOrNull()"))
+        assertFalse(source.contains("remember(context) { CallFilterLogStore.get(context) }"))
+        assertTrue(source.contains("R.string.call_history_preserved_closed"))
+        val strings = File("src/main/res/values/strings.xml").readText()
+        assertTrue(strings.contains("call_history_preserved_closed"))
+        assertTrue(strings.contains("laissé intact"))
+    }
+
     @Test fun absentRoomFileMayBeCreated() {
         assertTrue(
             SentinelLocalDatabasePreservation.allowOpen(

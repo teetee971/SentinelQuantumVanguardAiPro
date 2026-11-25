@@ -28,6 +28,12 @@ Statut : **NO-GO**. Ce document ne qualifie pas une mise à niveau V25. Aucune b
 
 Les secrets Android Keystore ne sont pas exportés par ce correctif. Une rotation ou un `deleteEntry` reste irréversible sur l'appareil.
 
+## Suite JVM — après ce constat
+
+Le paragraphe « Non fait » ci-dessous décrit l'état au moment de la rédaction initiale. L'exécution ultérieure est dans [JVM-SUITE-20261125.md](JVM-SUITE-20261125.md). Elle ne qualifie toujours pas le S24+.
+
+L'écran d'historique attrape désormais un refus d'ouverture : il affiche que le fichier local est intact au lieu de composer `CallFilterLogStore.get` sans `runCatching`. Le filtrage d'appel faisait déjà ce rattrapage après la réponse Android. Le refus ne supprime pas `sentinel-local.db`.
+
 ## Non fait
 
 Pas de suite Gradle. Pas d'ouverture de `sentinel-local.db` du Galaxy S24+. Pas de changement de `versionCode` ni de signature.
