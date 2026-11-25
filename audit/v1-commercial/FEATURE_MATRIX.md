@@ -16,4 +16,20 @@ Les états de cette matrice se rapportent au profil `-PsentinelCommercialV1=true
 | VPN, Mesh, Wear et Studio voix | EXCLUDE | Entrées et surfaces Android optionnelles retirées du profil. | Inspections de manifeste et de bibliothèques natives. | NOT RUN | Hors V1 |
 | Veille, réputation distante, WhatsApp, partage d’e-mail et autre enrichissement | EXCLUDE | NavGraph limité, retour des anciens jobs fermé, ponts optionnels masqués. | Contrats du profil et tests des barrières. | NOT RUN | Hors V1 |
 
+## Annonces souvent confondues avec le profil V1
+
+Ces lignes ne qualifient pas un appareil. Il n’existe pas de mise à jour automatique de l’APK. « Testé sur Android » vaut NON EXÉCUTÉ dans cet audit. Commercialisable reste NO-GO. « Hors V1 » est un périmètre de build, pas une preuve que le code hors profil fonctionne.
+
+| Fonction | Code présent | Intégré à l’APK V1 | Activé dans V1 | Accessible à l’utilisateur V1 | Testé sur Android | Commercialisable |
+| --- | --- | --- | --- | --- | --- | --- |
+| OSINT / CERT-FR | Client RSS dans le graphe complet. | Compilé avec les sources main, route absente du graphe commercial, worker coupé. | Non. | Non. | NON EXÉCUTÉ | NO-GO |
+| DISARM-FR / FIMI | Document et bibliothèque non raccordée. Pas de taxonomie. | Non. | Non. | Non. | NON EXÉCUTÉ | NO-GO |
+| Qwen | Activité et client loopback. Poids absents. | Activité retirée du manifeste V1. | Non. | Non. | NON EXÉCUTÉ | NO-GO |
+| Mesh | Serveur et classes Kotlin sans appel d’écran. | Non exposé. | Non. | Non. | NON EXÉCUTÉ | NO-GO |
+| VPN | Écran sans action de connexion. Passerelle absente. | Service WireGuard retiré, bibliothèques natives exclues. | Non. | Non. | NON EXÉCUTÉ | NO-GO |
+| Mise à jour automatique | Drapeau faux, bibliothèque non importée. Pas de mécanisme d’APK. | Non. | Non. | Non. | NON EXÉCUTÉ | NO-GO |
+| Nettoyage système | Diagnostic local et cache de l’application seulement. Ce n’est pas un nettoyage du système. | Écran absent du graphe commercial. | Non. | Non. | NON EXÉCUTÉ | NO-GO |
+| Audit cybersécurité du téléphone | Audit du paquet Sentinel, pas du parc d’applications. | Écran absent du graphe commercial. | Non. | Non. | NON EXÉCUTÉ | NO-GO |
+| Phone Core | Activités et services du manifeste. | Oui, graphe commercial. | Rôles Android requis, non observés ici. | Écrans du graphe, sous réserve des rôles. | NON EXÉCUTÉ | NO-GO |
+
 Les aperçus sensibles SMS restent soumis à la préférence de notification. Le masquage des informations sensibles sert la confidentialité locale du Phone Core. [Tests](TEST_EVIDENCE.md) · [Recette S24+](S24_PHYSICAL_ACCEPTANCE.md)
