@@ -191,11 +191,18 @@ class SettingsStore(context: Context) {
             ) purgeCommunicationReputation() else true
         }
 
-    private fun purgeCommunicationReputation(): Boolean =
-        appContext.getSharedPreferences(
+    private fun purgeCommunicationReputation(): Boolean {
+        val stored = appContext.getSharedPreferences(
             COMMUNICATION_REPUTATION_PREFERENCES,
             Context.MODE_PRIVATE
-        ).edit().clear().commit()
+        )
+        val victims = com.sentinel.quantum.security.CommunicationReputationPurge
+            .keysToRemove(stored.all.keys)
+        if (victims.isEmpty()) return true
+        val editor = stored.edit()
+        victims.forEach { editor.remove(it) }
+        return editor.commit()
+    }
 
     /**
      * Refresh interval in hours, restricted to the supported values.
