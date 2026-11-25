@@ -108,4 +108,4 @@ Des tests existent (361 fichiers `*Test.kt` unitaires, 22 `androidTest`, 205 `*.
 
 ## Non vérifié
 
-Même liste que le README et le focus : appareil, réseau, CI, histoires `main` ligne à ligne, clone local D1, branches des PR #1767 #1768 #1769 #1771, `fix/v1-phone-core-p1-20261119` (absente du remote).
+Même liste que le README et le focus : appareil, réseau, CI, histoires `main` ligne à ligne, clone local D1, branches des PR #1767 #1768 #1769 #1771. `fix/v1-phone-core-p1-20261119` existe au 2026-11-25 et n’a pas été extraite.
