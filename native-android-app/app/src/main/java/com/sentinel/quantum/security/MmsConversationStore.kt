@@ -96,7 +96,7 @@ internal class MmsConversationStore(private val context: Context) {
                 if (id == null) {
                     // A non-null insert URI proves that provider mutation may have happened. Do not
                     // erase the recovery journal unless that exact URI is confirmed absent again.
-                    rootInsertCleanupFailed = !cleanupExactUri(uri)
+                    rootInsertCleanupFailed = !cleanupExactUri(uri, transactionId)
                     return null
                 }
                 return id
@@ -154,7 +154,7 @@ internal class MmsConversationStore(private val context: Context) {
                 journal.markReady(token, providerMessageId)
 
             override fun deleteRoot(providerMessageId: Long): Boolean =
-                cleanupRoot(providerMessageId, insertedRootUri)
+                cleanupRoot(providerMessageId, insertedRootUri, transactionId)
 
             override fun clearJournal(): Boolean =
                 !rootInsertCleanupFailed && journal.remove(token)
@@ -176,8 +176,15 @@ internal class MmsConversationStore(private val context: Context) {
 
     fun recordRejectedBeforeTransport(token: String, providerMessageId: Long): Boolean {
         val nowMs = System.currentTimeMillis()
+        val transactionId = journal.read(token)?.transactionId ?: return false
         if (!journal.markRejectedBeforeTransport(token, providerMessageId, nowMs)) return false
-        if (holdsSmsRole() && transitionMessageBox(providerMessageId, successful = false, nowMs = nowMs)) {
+        if (holdsSmsRole() && transitionMessageBox(
+                providerMessageId,
+                transactionId,
+                successful = false,
+                nowMs = nowMs
+            )
+        ) {
             journal.remove(token)
         }
         return true
@@ -185,7 +192,9 @@ internal class MmsConversationStore(private val context: Context) {
 
     fun abandonBeforeTransport(token: String, providerMessageId: Long): Boolean {
         if (!holdsSmsRole() || !MmsProviderJournal.validToken(token) || providerMessageId <= 0L) return false
-        val deleted = cleanupRoot(providerMessageId, null)
+        val record = journal.read(token) ?: return false
+        if (record.providerMessageId != null && record.providerMessageId != providerMessageId) return false
+        val deleted = cleanupRoot(providerMessageId, null, record.transactionId)
         return deleted && journal.remove(token)
     }
 
@@ -200,8 +209,10 @@ internal class MmsConversationStore(private val context: Context) {
         nowMs: Long = System.currentTimeMillis()
     ): Boolean {
         if (!holdsSmsRole() || !MmsProviderJournal.validToken(token) || providerMessageId <= 0L) return false
+        val record = journal.read(token) ?: return false
+        if (record.providerMessageId != null && record.providerMessageId != providerMessageId) return false
         val outcomeJournaled = journal.markResult(token, providerMessageId, successful, nowMs)
-        val updated = transitionMessageBox(providerMessageId, successful, nowMs)
+        val updated = transitionMessageBox(providerMessageId, record.transactionId, successful, nowMs)
         if (updated) {
             // A stale journal record is safe but noisy. Do not downgrade a confirmed provider write
             // if cleanup metadata itself is unavailable.
@@ -221,79 +232,221 @@ internal class MmsConversationStore(private val context: Context) {
         if (!holdsSmsRole()) return 0
         var repaired = 0
         for (record in journal.all()) {
-            when (record.phase) {
-                MmsProviderJournal.Phase.BUILDING -> {
-                    when (val lookup = lookupRoot(record.transactionId)) {
-                        is RootLookup.Found -> if (cleanupRoot(lookup.id, lookup.uri) && journal.remove(record.token)) repaired++
-                        RootLookup.Absent -> if (journal.remove(record.token)) repaired++
-                        RootLookup.Error -> Unit
+            when (MmsOwnedRootMutation.repairAction(policyPhase(record.phase), roleHeld = true)) {
+                MmsOwnedRootMutation.RepairAction.KEEP_ROW,
+                MmsOwnedRootMutation.RepairAction.RETRY_LATER -> Unit
+                MmsOwnedRootMutation.RepairAction.DELETE_OWNED_INCOMPLETE -> {
+                    when (record.phase) {
+                        MmsProviderJournal.Phase.BUILDING -> {
+                            when (val lookup = lookupRoot(record.transactionId)) {
+                                is RootLookup.Found -> if (
+                                    cleanupRoot(lookup.id, lookup.uri, record.transactionId) &&
+                                    journal.remove(record.token)
+                                ) repaired++
+                                RootLookup.Absent -> if (journal.remove(record.token)) repaired++
+                                RootLookup.Error -> Unit
+                            }
+                        }
+                        MmsProviderJournal.Phase.ROOT_INSERTED -> {
+                            val id = record.providerMessageId ?: continue
+                            if (cleanupRoot(id, null, record.transactionId) && journal.remove(record.token)) {
+                                repaired++
+                            }
+                        }
+                        else -> Unit
                     }
                 }
-                MmsProviderJournal.Phase.ROOT_INSERTED -> {
-                    val id = record.providerMessageId ?: continue
-                    if (cleanupRoot(id, null) && journal.remove(record.token)) repaired++
-                }
-                MmsProviderJournal.Phase.RESULT_SENT,
-                MmsProviderJournal.Phase.RESULT_FAILED,
-                MmsProviderJournal.Phase.REJECTED_BEFORE_TRANSPORT -> {
+                MmsOwnedRootMutation.RepairAction.FINALIZE -> {
                     val id = record.providerMessageId ?: continue
                     val successful = record.phase == MmsProviderJournal.Phase.RESULT_SENT
-                    if (transitionMessageBox(id, successful, record.updatedAtMs) && journal.remove(record.token)) repaired++
+                    if (
+                        transitionMessageBox(id, record.transactionId, successful, record.updatedAtMs) &&
+                        journal.remove(record.token)
+                    ) repaired++
                 }
-                MmsProviderJournal.Phase.READY,
-                MmsProviderJournal.Phase.SUBMITTED,
-                MmsProviderJournal.Phase.SUBMISSION_UNKNOWN -> Unit
             }
         }
         return repaired
     }
 
-    private fun transitionMessageBox(providerMessageId: Long, successful: Boolean, nowMs: Long): Boolean {
-        if (providerMessageId <= 0L || nowMs < 0L) return false
-        val values = ContentValues().apply {
-            put(
-                Telephony.Mms.MESSAGE_BOX,
-                if (successful) Telephony.Mms.MESSAGE_BOX_SENT else Telephony.Mms.MESSAGE_BOX_FAILED
-            )
-            if (successful) put(Telephony.Mms.DATE_SENT, nowMs / 1000L)
+    private fun transitionMessageBox(
+        providerMessageId: Long,
+        transactionId: String,
+        successful: Boolean,
+        nowMs: Long
+    ): Boolean {
+        if (providerMessageId <= 0L || nowMs < 0L || transactionId.isBlank()) return false
+        val expected = MmsOwnedRootMutation.OutgoingIdentity(
+            providerMessageId,
+            appContext.packageName,
+            transactionId
+        )
+        val observed = when (val read = readOutgoing(providerMessageId)) {
+            OutgoingRead.Error -> return false
+            OutgoingRead.Absent -> null
+            is OutgoingRead.Row -> read.observed
         }
+        val decision = MmsOwnedRootMutation.authorizeOutgoingFinalize(
+            roleHeld = holdsSmsRole(),
+            expected = expected,
+            successful = successful,
+            observed = observed
+        )
         val uri = ContentUris.withAppendedId(Telephony.Mms.CONTENT_URI, providerMessageId)
-        return runCatching {
-            appContext.contentResolver.update(uri, values, null, null) == 1
-        }.getOrDefault(false)
+        val target = if (successful) Telephony.Mms.MESSAGE_BOX_SENT else Telephony.Mms.MESSAGE_BOX_FAILED
+        return MmsOwnedRootMutation.applyFinalize(
+            decision = decision,
+            targetBox = MmsOwnedRootMutation.targetBox(successful),
+            updateMatching = { clauses ->
+                val (selection, args) = selection(clauses)
+                val values = ContentValues().apply {
+                    put(Telephony.Mms.MESSAGE_BOX, target)
+                    if (successful) put(Telephony.Mms.DATE_SENT, nowMs / 1000L)
+                }
+                runCatching { appContext.contentResolver.update(uri, values, selection, args) }
+                    .getOrDefault(-1)
+            },
+            reread = { observedOrNull(readOutgoing(providerMessageId)) }
+        )
     }
 
-    private fun cleanupRoot(providerMessageId: Long, knownUri: Uri?): Boolean {
+    private fun cleanupRoot(providerMessageId: Long, knownUri: Uri?, transactionId: String): Boolean {
+        val expected = MmsOwnedRootMutation.OutgoingIdentity(
+            providerMessageId,
+            appContext.packageName,
+            transactionId
+        )
+        val observed = when (val read = readOutgoing(providerMessageId)) {
+            OutgoingRead.Error -> return false
+            OutgoingRead.Absent -> null
+            is OutgoingRead.Row -> read.observed
+        }
+        val decision = MmsOwnedRootMutation.authorizeOutgoingDelete(
+            roleHeld = holdsSmsRole(),
+            expected = expected,
+            observed = observed
+        )
         val uri = knownUri ?: ContentUris.withAppendedId(Telephony.Mms.CONTENT_URI, providerMessageId)
-        val deleted = runCatching { appContext.contentResolver.delete(uri, null, null) }.getOrNull()
-            ?: return false
-        if (deleted > 0) return true
-        return !rootExists(providerMessageId)
+        return deleteAuthorized(uri, decision) { readOutgoing(providerMessageId) }
     }
 
-    private fun cleanupExactUri(uri: Uri): Boolean {
-        val deleted = runCatching { appContext.contentResolver.delete(uri, null, null) }.getOrNull()
-            ?: return false
-        if (deleted > 0) return true
-        return runCatching {
-            appContext.contentResolver.query(uri, arrayOf(Telephony.Mms._ID), null, null, null)
-                ?.use { !it.moveToFirst() }
-                ?: false
-        }.getOrDefault(false)
+    private fun cleanupExactUri(uri: Uri, transactionId: String): Boolean {
+        if (!holdsSmsRole() || transactionId.isBlank()) return false
+        val read = readOutgoingUri(uri)
+        val observed = when (read) {
+            OutgoingRead.Error -> return false
+            OutgoingRead.Absent -> null
+            is OutgoingRead.Row -> read.observed
+        }
+        val providerMessageId = observed?.id ?: return observed == null
+        val decision = MmsOwnedRootMutation.authorizeOutgoingDelete(
+            roleHeld = true,
+            expected = MmsOwnedRootMutation.OutgoingIdentity(
+                providerMessageId,
+                appContext.packageName,
+                transactionId
+            ),
+            observed = observed
+        )
+        return deleteAuthorized(uri, decision) { readOutgoingUri(uri) }
     }
 
-    private fun rootExists(providerMessageId: Long): Boolean {
-        val uri = ContentUris.withAppendedId(Telephony.Mms.CONTENT_URI, providerMessageId)
-        return runCatching {
-            appContext.contentResolver.query(
-                uri,
-                arrayOf(Telephony.Mms._ID),
-                null,
-                null,
-                null
-            )?.use { it.moveToFirst() } ?: true
-        }.getOrDefault(true)
+    private fun deleteAuthorized(
+        uri: Uri,
+        decision: MmsOwnedRootMutation.Decision,
+        reread: () -> OutgoingRead
+    ): Boolean = MmsOwnedRootMutation.applyDelete(
+        decision = decision,
+        deleteMatching = { clauses ->
+            val (selection, args) = selection(clauses)
+            runCatching { appContext.contentResolver.delete(uri, selection, args) }.getOrDefault(-1)
+        },
+        reread = { observedOrNull(reread()) }
+    )
+
+    private fun observedOrNull(read: OutgoingRead): MmsOwnedRootMutation.Observed? = when (read) {
+        OutgoingRead.Absent -> null
+        OutgoingRead.Error -> MmsOwnedRootMutation.Observed(
+            id = -1L,
+            creator = null,
+            messageBox = -1,
+            transactionId = null
+        )
+        is OutgoingRead.Row -> read.observed
     }
+
+    private sealed interface OutgoingRead {
+        data class Row(val observed: MmsOwnedRootMutation.Observed) : OutgoingRead
+        data object Absent : OutgoingRead
+        data object Error : OutgoingRead
+    }
+
+    private fun readOutgoing(providerMessageId: Long): OutgoingRead {
+        if (providerMessageId <= 0L) return OutgoingRead.Error
+        return readOutgoingUri(ContentUris.withAppendedId(Telephony.Mms.CONTENT_URI, providerMessageId))
+    }
+
+    private fun readOutgoingUri(uri: Uri): OutgoingRead = runCatching {
+        appContext.contentResolver.query(
+            uri,
+            arrayOf(
+                Telephony.Mms._ID,
+                Telephony.Mms.CREATOR,
+                Telephony.Mms.MESSAGE_BOX,
+                Telephony.Mms.TRANSACTION_ID
+            ),
+            null,
+            null,
+            null
+        )?.use { cursor ->
+            if (!cursor.moveToFirst()) return@use OutgoingRead.Absent
+            OutgoingRead.Row(
+                MmsOwnedRootMutation.Observed(
+                    id = cursor.getLong(cursor.getColumnIndexOrThrow(Telephony.Mms._ID)),
+                    creator = cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Mms.CREATOR)),
+                    messageBox = cursor.getInt(cursor.getColumnIndexOrThrow(Telephony.Mms.MESSAGE_BOX)),
+                    transactionId = cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Mms.TRANSACTION_ID))
+                )
+            )
+        } ?: OutgoingRead.Error
+    }.getOrDefault(OutgoingRead.Error)
+
+    private fun selection(clauses: List<MmsOwnedRootMutation.Clause>): Pair<String, Array<String>> {
+        val parts = ArrayList<String>(clauses.size)
+        val args = ArrayList<String>(clauses.size)
+        for (clause in clauses) {
+            val name = when (clause.column) {
+                MmsOwnedRootMutation.Column.ID -> Telephony.Mms._ID
+                MmsOwnedRootMutation.Column.BOX -> Telephony.Mms.MESSAGE_BOX
+                MmsOwnedRootMutation.Column.CREATOR -> Telephony.Mms.CREATOR
+                MmsOwnedRootMutation.Column.TRANSACTION -> Telephony.Mms.TRANSACTION_ID
+                MmsOwnedRootMutation.Column.MESSAGE_ID -> Telephony.Mms.MESSAGE_ID
+                MmsOwnedRootMutation.Column.DATE -> Telephony.Mms.DATE
+                MmsOwnedRootMutation.Column.SUBSCRIPTION -> Telephony.Mms.SUBSCRIPTION_ID
+            }
+            if (clause.isNull) {
+                parts += "$name IS NULL"
+            } else {
+                parts += "$name=?"
+                args += clause.value.orEmpty()
+            }
+        }
+        return parts.joinToString(separator = " AND ") to args.toTypedArray()
+    }
+
+    private fun policyPhase(phase: MmsProviderJournal.Phase): MmsOwnedRootMutation.OutgoingPhase =
+        when (phase) {
+            MmsProviderJournal.Phase.BUILDING -> MmsOwnedRootMutation.OutgoingPhase.BUILDING
+            MmsProviderJournal.Phase.ROOT_INSERTED -> MmsOwnedRootMutation.OutgoingPhase.ROOT_INSERTED
+            MmsProviderJournal.Phase.READY -> MmsOwnedRootMutation.OutgoingPhase.READY
+            MmsProviderJournal.Phase.SUBMITTED -> MmsOwnedRootMutation.OutgoingPhase.SUBMITTED
+            MmsProviderJournal.Phase.SUBMISSION_UNKNOWN ->
+                MmsOwnedRootMutation.OutgoingPhase.SUBMISSION_UNKNOWN
+            MmsProviderJournal.Phase.RESULT_SENT -> MmsOwnedRootMutation.OutgoingPhase.RESULT_SENT
+            MmsProviderJournal.Phase.RESULT_FAILED -> MmsOwnedRootMutation.OutgoingPhase.RESULT_FAILED
+            MmsProviderJournal.Phase.REJECTED_BEFORE_TRANSPORT ->
+                MmsOwnedRootMutation.OutgoingPhase.REJECTED_BEFORE_TRANSPORT
+        }
 
     private sealed interface RootLookup {
         data class Found(val id: Long, val uri: Uri) : RootLookup

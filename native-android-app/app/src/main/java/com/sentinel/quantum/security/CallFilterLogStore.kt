@@ -49,9 +49,12 @@ class CallFilterLogStore private constructor(
             queueCapacity = MAX_PENDING_WRITES
         )
 
-        fun get(context: Context): CallFilterLogStore = CallFilterLogStore(
-            SentinelLocalDatabase.get(context.applicationContext).callFilterDecisionDao()
-        )
+        fun get(context: Context): CallFilterLogStore {
+            SentinelLocalDatabasePreservation.assertNonDestructive(false)
+            return CallFilterLogStore(
+                SentinelLocalDatabase.get(context.applicationContext).callFilterDecisionDao()
+            )
+        }
     }
 }
 

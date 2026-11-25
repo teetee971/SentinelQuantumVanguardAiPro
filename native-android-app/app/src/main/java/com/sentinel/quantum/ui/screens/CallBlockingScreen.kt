@@ -4,7 +4,6 @@ import android.Manifest
 import android.app.role.RoleManager
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Build
 import android.telecom.TelecomManager
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -22,7 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker
 import androidx.navigation.NavController
 import com.sentinel.quantum.BuildConfig
 import com.sentinel.quantum.R
@@ -59,8 +58,8 @@ fun CallBlockingScreen(navController: NavController) {
     val roleHeld = screeningState == CallScreeningActivationPolicy.State.HELD
     var contactsAllowed by remember {
         mutableStateOf(
-            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) ==
-                PackageManager.PERMISSION_GRANTED
+            PermissionChecker.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) ==
+                PermissionChecker.PERMISSION_GRANTED
         )
     }
     var silenceUnknown by remember { mutableStateOf(store.silenceOutsideDirectory()) }

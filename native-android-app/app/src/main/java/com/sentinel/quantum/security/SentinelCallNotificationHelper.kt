@@ -51,7 +51,19 @@ object SentinelCallNotificationHelper {
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
                 PackageManager.PERMISSION_GRANTED
-        ) return false
+        ) {
+            if (
+                InCallActivityLaunchPolicy.shouldRequest(
+                    InCallActivityLaunchPolicy.Trigger.INCOMING_NOTIFICATION_FALLBACK,
+                    hasActiveCall = true,
+                    outgoingCall = !incoming,
+                    notificationPermissionGranted = false
+                )
+            ) {
+                openIncomingCallScreen(context)
+            }
+            return false
+        }
 
         val manager = NotificationManagerCompat.from(context)
         if (!manager.areNotificationsEnabled()) return false
@@ -110,7 +122,8 @@ object SentinelCallNotificationHelper {
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setCategory(NotificationCompat.CATEGORY_CALL)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .setPublicVersion(publicLockScreenNotification(context, incoming, snapshot))
             .setPriority(if (incoming) NotificationCompat.PRIORITY_MAX else NotificationCompat.PRIORITY_DEFAULT)
             .setOngoing(true)
             .setAutoCancel(false)
@@ -132,6 +145,42 @@ object SentinelCallNotificationHelper {
         }.getOrDefault(false)
     }
 
+    /**
+     * Direct full-screen incoming UI when POST_NOTIFICATIONS is denied.
+     * False from [showCall] still means the notification itself was not posted.
+     */
+    private fun openIncomingCallScreen(context: Context) {
+        runCatching {
+            context.startActivity(
+                Intent(context, SentinelInCallActivity::class.java).addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                        Intent.FLAG_ACTIVITY_NO_USER_ACTION
+                )
+            )
+        }
+    }
+
+    /** Lock-screen notification. No CallStyle and no caller identity. */
+    private fun publicLockScreenNotification(
+        context: Context,
+        incoming: Boolean,
+        snapshot: SentinelInCallService.CallSnapshot
+    ): Notification {
+        val text = IncomingCallLockScreen.publicText(
+            incoming,
+            snapshot.displayName,
+            snapshot.handle
+        )
+        return NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(text)
+            .setContentText(text)
+            .setCategory(NotificationCompat.CATEGORY_CALL)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .build()
+    }
+
     fun cancel(context: Context) {
         alertPolicy.clear()
         NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
@@ -148,7 +197,7 @@ object SentinelCallNotificationHelper {
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Interface d’appel entrant du composeur Sentinel"
-                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+                lockscreenVisibility = Notification.VISIBILITY_PRIVATE
                 setSound(null, null)
                 enableVibration(false)
             }

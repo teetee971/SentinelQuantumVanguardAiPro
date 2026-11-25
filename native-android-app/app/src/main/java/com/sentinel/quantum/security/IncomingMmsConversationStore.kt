@@ -141,7 +141,7 @@ internal class IncomingMmsConversationStore(context: Context) {
                 if (id == null) {
                     // A non-null URI proves that provider mutation may have happened. The exact URI
                     // is the only safe cleanup handle when no numeric provider id can be parsed.
-                    rootInsertCleanupFailed = !cleanupExactUri(uri)
+                    rootInsertCleanupFailed = !cleanupExactUri(uri, identity(plan))
                     return null
                 }
                 return id
@@ -506,29 +506,127 @@ internal class IncomingMmsConversationStore(context: Context) {
         knownUri: Uri?,
         identity: RootIdentity
     ): Boolean {
-        when (verifyRoot(providerMessageId, identity, requireAddress = false)) {
-            RootVerification.Absent -> return true
-            RootVerification.Owned -> Unit
-            RootVerification.ExternalExact,
-            RootVerification.Mismatch,
-            RootVerification.Error -> return false
+        if (!holdsSmsRole()) return false
+        val observed = when (val read = readIncoming(providerMessageId)) {
+            IncomingRead.Error -> return false
+            IncomingRead.Absent -> null
+            is IncomingRead.Row -> read.observed
         }
+        val decision = MmsOwnedRootMutation.authorizeIncomingDelete(
+            roleHeld = true,
+            expected = incomingIdentity(providerMessageId, identity),
+            observed = observed
+        )
         val uri = knownUri ?: ContentUris.withAppendedId(Telephony.Mms.CONTENT_URI, providerMessageId)
-        val deleted = runCatching { appContext.contentResolver.delete(uri, null, null) }.getOrNull()
-            ?: return false
-        if (deleted > 0) return true
-        return verifyRoot(providerMessageId, identity, requireAddress = false) == RootVerification.Absent
+        return deleteAuthorized(uri, decision) { readIncoming(providerMessageId) }
     }
 
-    private fun cleanupExactUri(uri: Uri): Boolean {
-        val deleted = runCatching { appContext.contentResolver.delete(uri, null, null) }.getOrNull()
-            ?: return false
-        if (deleted > 0) return true
-        return runCatching {
-            appContext.contentResolver.query(uri, arrayOf(Telephony.Mms._ID), null, null, null)
-                ?.use { !it.moveToFirst() }
-                ?: false
-        }.getOrDefault(false)
+    private fun cleanupExactUri(uri: Uri, identity: RootIdentity): Boolean {
+        if (!holdsSmsRole()) return false
+        val observed = when (val read = readIncomingUri(uri)) {
+            IncomingRead.Error -> return false
+            IncomingRead.Absent -> null
+            is IncomingRead.Row -> read.observed
+        }
+        val providerMessageId = observed?.id ?: return observed == null
+        val decision = MmsOwnedRootMutation.authorizeIncomingDelete(
+            roleHeld = true,
+            expected = incomingIdentity(providerMessageId, identity),
+            observed = observed
+        )
+        return deleteAuthorized(uri, decision) { readIncomingUri(uri) }
+    }
+
+    private fun deleteAuthorized(
+        uri: Uri,
+        decision: MmsOwnedRootMutation.Decision,
+        reread: () -> IncomingRead
+    ): Boolean = MmsOwnedRootMutation.applyDelete(
+        decision = decision,
+        deleteMatching = { clauses ->
+            val (selection, args) = selection(clauses)
+            runCatching { appContext.contentResolver.delete(uri, selection, args) }.getOrDefault(-1)
+        },
+        reread = {
+            when (val read = reread()) {
+                IncomingRead.Absent -> null
+                IncomingRead.Error -> MmsOwnedRootMutation.Observed(-1L, null, -1, null)
+                is IncomingRead.Row -> read.observed
+            }
+        }
+    )
+
+    private fun incomingIdentity(providerMessageId: Long, identity: RootIdentity) =
+        MmsOwnedRootMutation.IncomingIdentity(
+            providerMessageId = providerMessageId,
+            packageName = appContext.packageName,
+            messageId = identity.messageId,
+            transactionId = identity.transactionId,
+            dateSeconds = identity.dateSeconds,
+            subscriptionId = identity.subscriptionId
+        )
+
+    private sealed interface IncomingRead {
+        data class Row(val observed: MmsOwnedRootMutation.Observed) : IncomingRead
+        data object Absent : IncomingRead
+        data object Error : IncomingRead
+    }
+
+    private fun readIncoming(providerMessageId: Long): IncomingRead {
+        if (providerMessageId <= 0L) return IncomingRead.Error
+        return readIncomingUri(ContentUris.withAppendedId(Telephony.Mms.CONTENT_URI, providerMessageId))
+    }
+
+    private fun readIncomingUri(uri: Uri): IncomingRead = runCatching {
+        appContext.contentResolver.query(
+            uri,
+            arrayOf(
+                Telephony.Mms._ID,
+                Telephony.Mms.CREATOR,
+                Telephony.Mms.MESSAGE_BOX,
+                Telephony.Mms.SUBSCRIPTION_ID,
+                Telephony.Mms.DATE,
+                Telephony.Mms.MESSAGE_ID,
+                Telephony.Mms.TRANSACTION_ID
+            ),
+            null,
+            null,
+            null
+        )?.use { cursor ->
+            if (!cursor.moveToFirst()) return@use IncomingRead.Absent
+            IncomingRead.Row(
+                MmsOwnedRootMutation.Observed(
+                    id = cursor.getLong(cursor.getColumnIndexOrThrow(Telephony.Mms._ID)),
+                    creator = cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Mms.CREATOR)),
+                    messageBox = cursor.getInt(cursor.getColumnIndexOrThrow(Telephony.Mms.MESSAGE_BOX)),
+                    transactionId = cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Mms.TRANSACTION_ID)),
+                    messageId = cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Mms.MESSAGE_ID)),
+                    dateSeconds = cursor.getLong(cursor.getColumnIndexOrThrow(Telephony.Mms.DATE)),
+                    subscriptionId = cursor.getInt(cursor.getColumnIndexOrThrow(Telephony.Mms.SUBSCRIPTION_ID))
+                )
+            )
+        } ?: IncomingRead.Error
+    }.getOrDefault(IncomingRead.Error)
+
+    private fun selection(clauses: List<MmsOwnedRootMutation.Clause>): Pair<String, Array<String>> {
+        val parts = ArrayList<String>(clauses.size)
+        val args = ArrayList<String>(clauses.size)
+        for (clause in clauses) {
+            val name = when (clause.column) {
+                MmsOwnedRootMutation.Column.ID -> Telephony.Mms._ID
+                MmsOwnedRootMutation.Column.BOX -> Telephony.Mms.MESSAGE_BOX
+                MmsOwnedRootMutation.Column.CREATOR -> Telephony.Mms.CREATOR
+                MmsOwnedRootMutation.Column.TRANSACTION -> Telephony.Mms.TRANSACTION_ID
+                MmsOwnedRootMutation.Column.MESSAGE_ID -> Telephony.Mms.MESSAGE_ID
+                MmsOwnedRootMutation.Column.DATE -> Telephony.Mms.DATE
+                MmsOwnedRootMutation.Column.SUBSCRIPTION -> Telephony.Mms.SUBSCRIPTION_ID
+            }
+            if (clause.isNull) parts += "$name IS NULL" else {
+                parts += "$name=?"
+                args += clause.value.orEmpty()
+            }
+        }
+        return parts.joinToString(separator = " AND ") to args.toTypedArray()
     }
 
     private fun validPlanForJournal(plan: IncomingMmsProjectionPlan.Plan): Boolean =
