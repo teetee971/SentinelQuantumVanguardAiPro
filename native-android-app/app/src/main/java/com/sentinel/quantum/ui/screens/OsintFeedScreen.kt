@@ -140,10 +140,13 @@ fun OsintFeedScreen(navController: NavController) {
             val allowed = OsintRssConfig.fetchSources(SettingsStore(context).osintRssSourceNames())
                 .map { it.displayName }
                 .toSet()
-            feedItems = OsintFeedDiff.retainSources(cached.items, allowed)
-            cachedAtMs = cached.fetchedAtMs
-            displayedSnapshot = OsintDisplayedSnapshot.COMPLETE
-            OsintTransientItemStore.clear()
+            val retained = OsintFeedDiff.retainedCompleteSnapshot(cached.items, allowed)
+            if (retained != null) {
+                feedItems = retained
+                cachedAtMs = cached.fetchedAtMs
+                displayedSnapshot = OsintDisplayedSnapshot.COMPLETE
+                OsintTransientItemStore.clear()
+            }
         }
         loadFeeds()
     }

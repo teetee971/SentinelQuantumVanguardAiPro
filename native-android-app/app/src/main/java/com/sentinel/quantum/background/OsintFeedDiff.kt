@@ -57,4 +57,10 @@ internal object OsintFeedDiff {
         val retained = retainSources(cached, allowedSourceNames)
         return if (retained.isEmpty() && cached.isNotEmpty()) null else retained
     }
+
+    /** A cache that no longer contains an allowed source is not a complete snapshot. */
+    fun retainedCompleteSnapshot(
+        items: List<OsintFeedItem>,
+        allowedSourceNames: Set<String>
+    ): List<OsintFeedItem>? = retainSources(items, allowedSourceNames).takeIf { it.isNotEmpty() }
 }

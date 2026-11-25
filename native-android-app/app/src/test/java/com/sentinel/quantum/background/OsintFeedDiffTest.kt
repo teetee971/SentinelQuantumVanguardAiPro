@@ -108,6 +108,11 @@ class OsintFeedDiffTest {
             listOf("https://kept"),
             OsintFeedDiff.notificationBaseline(listOf(kept, disabled), allowed)?.map { it.link }
         )
+        assertEquals(null, OsintFeedDiff.retainedCompleteSnapshot(listOf(disabled), allowed))
+        assertEquals(
+            listOf("https://kept"),
+            OsintFeedDiff.retainedCompleteSnapshot(listOf(kept, disabled), allowed)?.map { it.link }
+        )
     }
 
     private companion object {
