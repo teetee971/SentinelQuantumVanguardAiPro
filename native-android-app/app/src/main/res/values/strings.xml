@@ -77,7 +77,7 @@
 
     <string name="settings_title">Paramètres</string>
     <string name="settings_osint_section">Veille OSINT</string>
-    <string name="settings_osint_description">Vérification périodique des flux publics en arrière-plan, puis notification locale en cas de nouvelle alerte.</string>
+    <string name="settings_osint_description">Vérification optionnelle de flux publics, désactivée par défaut. Hors profil commercial V1. Non qualifiée sur appareil.</string>
     <string name="settings_osint_interval_never">Jamais</string>
     <string name="settings_osint_interval_hours">Toutes les %1$d h</string>
     <string name="settings_osint_notifications">Notifications de veille OSINT</string>
