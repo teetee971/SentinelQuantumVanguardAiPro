@@ -2,10 +2,13 @@ package com.sentinel.quantum.security
 
 import androidx.test.runner.AndroidJUnitRunner
 
-/** Stops the suite before any test can write when the installed V25 database is present. */
+/**
+ * Additional defense only. Replacing this runner on the command line does not
+ * authorize the installed package: each test class also installs RefuseInstalledPackageRule.
+ */
 class SentinelPreservationInstrumentationRunner : AndroidJUnitRunner() {
     override fun onStart() {
-        InstalledDataGuard.assertSafeToRun(targetContext)
+        InstalledDataGuard.assertSafeToRun(targetContext, context)
         super.onStart()
     }
 }

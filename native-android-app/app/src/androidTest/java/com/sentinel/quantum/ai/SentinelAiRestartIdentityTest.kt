@@ -8,6 +8,13 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SentinelAiRestartIdentityTest {
+
+    companion object {
+        @kotlin.jvm.JvmStatic
+        @get:org.junit.ClassRule
+        val refuseInstalledPackage = com.sentinel.quantum.security.RefuseInstalledPackageRule()
+    }
+
     private val prepared = SentinelAiRestartIdentity(pid = 4242, startTicks = 9300, bootCount = 13)
 
     @Test fun sameProcessCannotProveRestartEvenAfterAnotherInstrumentationInvocation() {

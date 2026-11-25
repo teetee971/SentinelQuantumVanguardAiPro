@@ -16,6 +16,13 @@ import org.junit.Assume.assumeTrue
 import org.junit.Test
 
 class CommercialPhoneCoreNavigationInstrumentationTest {
+
+    companion object {
+        @kotlin.jvm.JvmStatic
+        @get:org.junit.ClassRule
+        val refuseInstalledPackage = com.sentinel.quantum.security.RefuseInstalledPackageRule()
+    }
+
     @OptIn(ExperimentalTestApi::class)
     @Test
     fun launchAndProtectionActionsStayInsideTheCommercialGraph() {

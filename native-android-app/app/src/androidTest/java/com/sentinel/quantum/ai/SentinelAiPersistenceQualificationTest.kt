@@ -24,6 +24,13 @@ import org.junit.runner.RunWith
 /** C11 persistence fixtures. A physical receipt requires a successful, explicit verify phase. */
 @RunWith(AndroidJUnit4::class)
 class SentinelAiPersistenceQualificationTest {
+
+    companion object {
+        @kotlin.jvm.JvmStatic
+        @get:org.junit.ClassRule
+        val refuseInstalledPackage = com.sentinel.quantum.security.RefuseInstalledPackageRule()
+    }
+
     private fun store() = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
     private fun createKey(alias: String): SecretKey = KeyGenerator.getInstance(
         KeyProperties.KEY_ALGORITHM_HMAC_SHA256, "AndroidKeyStore").run {
@@ -32,7 +39,12 @@ class SentinelAiPersistenceQualificationTest {
         generateKey()
     }
     @Test fun concurrentAndroidKeystoreJournalWriters() {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        com.sentinel.quantum.security.InstalledDataGuard.assertSafeToRun(
+            instrumentation.targetContext,
+            instrumentation.context
+        )
+        val context = instrumentation.targetContext
         val alias = "sentinel_ai_concurrency_test_" + UUID.randomUUID()
         val directory = File(context.cacheDir, alias)
         val keys = store();val pool = Executors.newFixedThreadPool(4)
@@ -53,6 +65,10 @@ class SentinelAiPersistenceQualificationTest {
     }
     @Test fun journalPersistenceFixtureProtocol() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
+        com.sentinel.quantum.security.InstalledDataGuard.assertSafeToRun(
+            instrumentation.targetContext,
+            instrumentation.context
+        )
         val context = instrumentation.targetContext
         val arguments = InstrumentationRegistry.getArguments()
         val phase = arguments.getString("sentinel_ai_restart_phase") ?: "roundtrip"

@@ -2,7 +2,7 @@
 
 Statut : **NO-GO commercial** et **NO-GO installation V26**. Ce classement ne supprime aucun contrôle, n'ajoute pas de `lint.xml` baseline, et ne change pas `versionCode` ni la signature.
 
-Source : `./gradlew :app:lintDebug -PsentinelCommercialV1=true` sur `3fd8aa1`, rapport `lint-results-debug.xml`, lint 9.4.1. **264** issues : **245** Warning, **19** Hint, **0** erreur. La même tâche, relancée après le seul changement de `SentinelAiLocalHttpTest`, reste à 264 / 245 / 19 / 0. Les sources de production ne changent pas. Aucun `lint.xml` n'est ajouté.
+Source : `./gradlew :app:lintDebug -PsentinelCommercialV1=true` sur `3fd8aa1`, rapport `lint-results-debug.xml`, lint 9.4.1. **264** issues : **245** Warning, **19** Hint, **0** erreur. La même tâche, relancée après le seul changement de `SentinelAiLocalHttpTest`, reste à 264 / 245 / 19 / 0. Relance du 2026-11-25T17:49Z après le refus inconditionnel de l'instrumentation hors `com.sentinel.quantum.v1validation` (tests, garde-fou, pas le chemin Room de production) : toujours **0 erreur, 245 warnings, 19 hints**. Aucune issue nouvelle. Aucun `lint.xml` n'est ajouté. Ce lint n'exécute pas l'instrumentation ARM64.
 
 Aucun de ces 264 signaux n'est une erreur de compilation lint. Aucun ne remplace l'instrumentation ARM64, l'ouverture de la base réelle, ni la preuve de signature. Ils ne justifient pas un APK de mise à niveau.
 

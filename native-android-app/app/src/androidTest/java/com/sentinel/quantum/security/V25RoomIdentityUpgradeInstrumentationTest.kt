@@ -18,11 +18,9 @@ import org.junit.runner.RunWith
 class V25RoomIdentityUpgradeInstrumentationTest {
     @Test
     fun twentyNineSyntheticDecisionsSurviveOpenOfTheBundledIdentity() {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val packageName = context.packageName
-        check(packageName == VALIDATION_PACKAGE) {
-            "REFUSING_TO_TOUCH_INSTALLED_V25_PACKAGE $packageName"
-        }
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        InstalledDataGuard.assertSafeToRun(instrumentation.targetContext, instrumentation.context)
+        val context = instrumentation.targetContext
         dropCachedDatabase()
         context.deleteDatabase(DATABASE_NAME)
         val path = context.getDatabasePath(DATABASE_NAME)
@@ -82,7 +80,11 @@ class V25RoomIdentityUpgradeInstrumentationTest {
         existing?.close()
     }
 
-    private companion object {
+    companion object {
+        @kotlin.jvm.JvmStatic
+        @get:org.junit.ClassRule
+        val refuseInstalledPackage = com.sentinel.quantum.security.RefuseInstalledPackageRule()
+
         const val DATABASE_NAME = "sentinel-local.db"
         const val VALIDATION_PACKAGE = "com.sentinel.quantum.v1validation"
         const val IDENTITY = SentinelLocalDatabasePreservation.IDENTITY_HASH

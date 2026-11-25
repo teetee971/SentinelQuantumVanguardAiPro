@@ -12,20 +12,25 @@ internal object SentinelLocalDatabasePreservation {
     const val VALIDATION_PACKAGE = "com.sentinel.quantum.v1validation"
 
     /**
-     * Instrumentation may start on the side-by-side recette package, or on a
-     * throwaway install that does not already have a database. An existing
-     * database on the installed package is allowed only when every row is the
-     * synthetic fixture. Unreadable is refused. This does not delete anything.
+     * Only the side-by-side recette package may be instrumented.
+     * The installed package is refused even when its database is absent, synthetic,
+     * unreadable, or accompanied by WAL/SHM files. Database state never grants access.
      */
+    @Suppress("UNUSED_PARAMETER")
     fun instrumentationMayStart(
         packageName: String,
-        databaseFilePresent: Boolean,
-        syntheticFixture: Boolean?
-    ): Boolean {
-        if (packageName == VALIDATION_PACKAGE) return true
-        if (packageName != INSTALLED_PACKAGE) return false
-        if (!databaseFilePresent) return true
-        return syntheticFixture == true
+        databaseFilePresent: Boolean = false,
+        syntheticFixture: Boolean? = null,
+        databaseUnreadable: Boolean = false,
+        walOrShmPresent: Boolean = false
+    ): Boolean = packageName == VALIDATION_PACKAGE
+
+    /** The test APK must be a distinct package. Same identity as the target or the installed app is refused. */
+    fun instrumentationPackagesAreSeparated(targetPackage: String, testPackage: String): Boolean {
+        if (!instrumentationMayStart(targetPackage)) return false
+        return testPackage == "$VALIDATION_PACKAGE.test" &&
+            testPackage != targetPackage &&
+            testPackage != INSTALLED_PACKAGE
     }
 
     data class DecisionRow(val id: Long, val occurredAtMs: Long, val action: String)

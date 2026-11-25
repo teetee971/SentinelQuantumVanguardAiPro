@@ -14,6 +14,13 @@ import org.junit.runner.RunWith
 /** Smoke coverage for non-exported application surfaces that are not destinations of NavGraph. */
 @RunWith(AndroidJUnit4::class)
 class StandaloneActivitySmokeInstrumentationTest {
+
+    companion object {
+        @kotlin.jvm.JvmStatic
+        @get:org.junit.ClassRule
+        val refuseInstalledPackage = com.sentinel.quantum.security.RefuseInstalledPackageRule()
+    }
+
     @Test fun phoneCoreActivationRenders() = launchAndResume(PhoneCoreActivationActivity::class.java)
     @Test fun phoneCoreDiagnosticRenders() = launchAndResume(PhoneCoreDiagnosticActivity::class.java)
     @Test fun voiceStudioRenders() = launchAndResume(VoiceStudioActivity::class.java)

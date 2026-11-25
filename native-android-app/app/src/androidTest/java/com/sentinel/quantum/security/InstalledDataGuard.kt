@@ -1,45 +1,34 @@
 package com.sentinel.quantum.security
 
 import android.content.Context
-import android.database.sqlite.SQLiteDatabase
+import org.junit.rules.TestRule
+import org.junit.runners.model.Statement
 
 /**
- * Read-only gate for the instrumentation process. It never deletes, checkpoints,
- * or updates the database. A failure to read an existing file is a refusal.
+ * Package identity only. This object does not open SQLite, read a fixture,
+ * or delete anything. Database state is not an input.
  */
 internal object InstalledDataGuard {
-    fun assertSafeToRun(context: Context) {
-        val file = context.getDatabasePath("sentinel-local.db")
-        val present = file.isFile
-        val synthetic = if (present) syntheticFixture(file) else null
+    fun assertSafeToRun(target: Context, instrumentation: Context) {
+        val targetPackage = target.packageName
+        val testPackage = instrumentation.packageName
         check(
-            SentinelLocalDatabasePreservation.instrumentationMayStart(
-                packageName = context.packageName,
-                databaseFilePresent = present,
-                syntheticFixture = synthetic
+            SentinelLocalDatabasePreservation.instrumentationPackagesAreSeparated(
+                targetPackage,
+                testPackage
             )
-        ) { "REFUSING_TO_TOUCH_INSTALLED_V25_PACKAGE ${context.packageName}" }
+        ) { "REFUSING_TO_TOUCH_INSTALLED_V25_PACKAGE target=$targetPackage test=$testPackage" }
     }
+}
 
-    private fun syntheticFixture(file: java.io.File): Boolean? = runCatching {
-        SQLiteDatabase.openDatabase(file.absolutePath, null, SQLiteDatabase.OPEN_READONLY).use { database ->
-            val identity = database.rawQuery(
-                "SELECT identity_hash FROM room_master_table WHERE id = 42",
-                null
-            ).use { cursor -> if (!cursor.moveToFirst()) null else cursor.getString(0) }
-            if (identity != SentinelLocalDatabasePreservation.IDENTITY_HASH) return@use false
-            if (database.version != SentinelLocalDatabasePreservation.SCHEMA_VERSION) return@use false
-            database.rawQuery(
-                "SELECT COUNT(*), " +
-                    "SUM(CASE WHEN source = 'TEST' AND reason = 'synthetic' AND action = 'ALLOW' " +
-                    "THEN 1 ELSE 0 END) FROM call_filter_decisions",
-                null
-            ).use { cursor ->
-                if (!cursor.moveToFirst()) return@use false
-                val rows = cursor.getInt(0)
-                val fixture = if (cursor.isNull(1)) 0 else cursor.getInt(1)
-                rows > 0 && fixture == rows
+/** Runs before @Before, @After and the test body. Not a substitute for the per-test call sites. */
+class RefuseInstalledPackageRule : TestRule {
+    override fun apply(base: Statement, description: org.junit.runner.Description): Statement =
+        object : Statement() {
+            override fun evaluate() {
+                val instrumentation = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+                InstalledDataGuard.assertSafeToRun(instrumentation.targetContext, instrumentation.context)
+                base.evaluate()
             }
         }
-    }.getOrNull()
 }

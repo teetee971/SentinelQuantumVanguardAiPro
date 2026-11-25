@@ -10,6 +10,13 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class MissedCallReceiverManifestInstrumentationTest {
+
+    companion object {
+        @kotlin.jvm.JvmStatic
+        @get:org.junit.ClassRule
+        val refuseInstalledPackage = com.sentinel.quantum.security.RefuseInstalledPackageRule()
+    }
+
     @Test
     fun missedCallReceiverIsExportedOnlyBehindTelecomSignaturePermission() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext

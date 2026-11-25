@@ -149,13 +149,24 @@ else
   fail=1
 fi
 
-say "--- instrumentation must not touch the installed package ---"
+say "--- instrumentation must refuse the installed package unconditionally ---"
+preservation="native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelLocalDatabasePreservation.kt"
+guard="native-android-app/app/src/androidTest/java/com/sentinel/quantum/security/InstalledDataGuard.kt"
 inst="native-android-app/app/src/androidTest/java/com/sentinel/quantum/security/V25RoomIdentityUpgradeInstrumentationTest.kt"
-if [ -f "$inst" ] && grep -q "REFUSING_TO_TOUCH_INSTALLED_V25_PACKAGE" "$inst" \
-  && grep -q "SentinelPreservationInstrumentationRunner" native-android-app/app/build.gradle; then
-  say "instrumentation_package_guard=present"
+if [ -f "$preservation" ] && grep -q 'packageName == VALIDATION_PACKAGE' "$preservation" \
+  && ! grep -q 'if (!databaseFilePresent) return true' "$preservation" \
+  && ! grep -q 'syntheticFixture == true' "$preservation" \
+  && [ -f "$guard" ] && grep -q "REFUSING_TO_TOUCH_INSTALLED_V25_PACKAGE" "$guard" \
+  && grep -q "instrumentationPackagesAreSeparated" "$guard" \
+  && ! grep -q "SQLiteDatabase" "$guard" \
+  && [ -f "$inst" ] && grep -q "InstalledDataGuard.assertSafeToRun" "$inst" \
+  && grep -q "RefuseInstalledPackageRule()" "$inst" \
+  && grep -q "SentinelPreservationInstrumentationRunner" native-android-app/app/build.gradle \
+  && ! grep -q "testApplicationId" native-android-app/app/build.gradle; then
+  say "instrumentation_package_guard=package_identity_only"
 else
-  say "BLOCK the synthetic Room test can delete sentinel-local.db. Refuse unless the package is com.sentinel.quantum.v1validation."
+  say "BLOCK instrumentation of com.sentinel.quantum is still possible, including when sentinel-local.db is absent or synthetic."
+  say "BLOCK required: target exactly com.sentinel.quantum.v1validation, test APK com.sentinel.quantum.v1validation.test, no SQLite probe before the package check."
   fail=1
 fi
 
@@ -167,9 +178,10 @@ if [ "$fail" -ne 0 ]; then
   exit 1
 fi
 say "PREFLIGHT=READY_FOR_EXPLICIT_JVM_LINT_ONLY"
+say "The runner is extra defense only. Stock AndroidJUnitRunner remains on the test classpath."
 say "Next, only if this output was kept, and as two separate commands:"
 say "cd native-android-app && ./gradlew :app:testDebugUnitTest -PsentinelCommercialV1=true --console=plain"
 say "cd native-android-app && ./gradlew :app:lintDebug -PsentinelCommercialV1=true --console=plain"
 say "Do not assemble a releasable APK. Do not adb install. Do not pm clear. Do not uninstall com.sentinel.quantum."
-say "Do not run connectedAndroidTest on com.sentinel.quantum. The synthetic Room test deletes sentinel-local.db of whatever package it is installed into."
+say "Do not run connectedAndroidTest against com.sentinel.quantum. Absent, synthetic, real, unreadable, and WAL/SHM databases do not authorize that package."
 exit 0

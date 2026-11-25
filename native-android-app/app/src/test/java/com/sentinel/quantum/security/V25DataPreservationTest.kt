@@ -129,33 +129,95 @@ class V25DataPreservationTest {
         )
     }
 
-    @Test fun instrumentationMayStartOnlyForRecetteOrASyntheticFixture() {
+    @Test fun commercialPackageIsNeverInstrumentable() {
         val installed = SentinelLocalDatabasePreservation.INSTALLED_PACKAGE
         val recette = SentinelLocalDatabasePreservation.VALIDATION_PACKAGE
-        assertTrue(SentinelLocalDatabasePreservation.instrumentationMayStart(recette, true, false))
-        assertTrue(SentinelLocalDatabasePreservation.instrumentationMayStart(installed, false, null))
-        assertTrue(SentinelLocalDatabasePreservation.instrumentationMayStart(installed, true, true))
-        assertFalse(SentinelLocalDatabasePreservation.instrumentationMayStart(installed, true, false))
-        assertFalse(SentinelLocalDatabasePreservation.instrumentationMayStart(installed, true, null))
-        assertFalse(SentinelLocalDatabasePreservation.instrumentationMayStart("com.sentinel.quantum.debug", false, null))
+        assertFalse(SentinelLocalDatabasePreservation.instrumentationMayStart(
+            installed, databaseFilePresent = false
+        ))
+        assertFalse(SentinelLocalDatabasePreservation.instrumentationMayStart(
+            installed, databaseFilePresent = true, syntheticFixture = true
+        ))
+        assertFalse(SentinelLocalDatabasePreservation.instrumentationMayStart(
+            installed, databaseFilePresent = true, syntheticFixture = false
+        ))
+        assertFalse(SentinelLocalDatabasePreservation.instrumentationMayStart(
+            installed, databaseFilePresent = true, databaseUnreadable = true
+        ))
+        assertFalse(SentinelLocalDatabasePreservation.instrumentationMayStart(
+            installed, databaseFilePresent = true, syntheticFixture = true, walOrShmPresent = true
+        ))
+        assertTrue(SentinelLocalDatabasePreservation.instrumentationMayStart(
+            recette, databaseFilePresent = true, syntheticFixture = false,
+            databaseUnreadable = true, walOrShmPresent = true
+        ))
+        assertFalse(SentinelLocalDatabasePreservation.instrumentationMayStart(
+            "$recette.test", databaseFilePresent = false
+        ))
+        assertTrue(SentinelLocalDatabasePreservation.instrumentationPackagesAreSeparated(
+            recette, "$recette.test"
+        ))
+        assertFalse(SentinelLocalDatabasePreservation.instrumentationPackagesAreSeparated(
+            installed, "$installed.test"
+        ))
+        assertFalse(SentinelLocalDatabasePreservation.instrumentationPackagesAreSeparated(
+            recette, recette
+        ))
+        assertFalse(SentinelLocalDatabasePreservation.instrumentationPackagesAreSeparated(
+            recette, installed
+        ))
+        assertFalse(SentinelLocalDatabasePreservation.instrumentationPackagesAreSeparated(
+            "com.sentinel.quantum.aivalidation.c11",
+            "com.sentinel.quantum.aivalidation.c11.test"
+        ))
         val gradle = File("build.gradle").readText()
+        assertTrue(gradle.contains("applicationId \"com.sentinel.quantum\""))
+        assertTrue(gradle.contains("applicationIdSuffix '.v1validation'"))
+        assertFalse(gradle.contains("testApplicationId"))
         assertTrue(gradle.contains("com.sentinel.quantum.security.SentinelPreservationInstrumentationRunner"))
+        val properties = File("../gradle.properties").readText()
+        assertFalse(properties.contains("testInstrumentationRunner"))
         val guard = File("src/androidTest/java/com/sentinel/quantum/security/InstalledDataGuard.kt").readText()
-        assertTrue(guard.contains("SQLiteDatabase.OPEN_READONLY"))
         assertTrue(guard.contains("REFUSING_TO_TOUCH_INSTALLED_V25_PACKAGE"))
+        assertTrue(guard.contains("instrumentationPackagesAreSeparated"))
+        assertFalse(guard.contains("SQLiteDatabase"))
+        assertFalse(guard.contains("getDatabasePath"))
         assertFalse(guard.contains("deleteDatabase"))
     }
 
-    @Test fun instrumentationDeletesOnlyTheValidationPackageDatabase() {
-        val source = File(
+    @Test fun instrumentationClassesGateBeforeAnyDestructiveCall() {
+        val destructive = listOf(
+            "deleteDatabase(",
+            ".clear().commit()",
+            "deleteRecursively(",
+            "deleteEntry(",
+            "FileOutputStream("
+        )
+        val failures = mutableListOf<String>()
+        File("src/androidTest/java").walkTopDown().filter { it.extension == "kt" }.forEach { file ->
+            val source = file.readText()
+            if (!source.contains("@Test")) return@forEach
+            val call = source.indexOf("InstalledDataGuard.assertSafeToRun").let { if (it < 0) Int.MAX_VALUE else it }
+            val rule = source.indexOf("RefuseInstalledPackageRule()").let { if (it < 0) Int.MAX_VALUE else it }
+            val gate = minOf(call, rule)
+            if (gate == Int.MAX_VALUE) {
+                failures += "${file.name} has no package gate"
+                return@forEach
+            }
+            for (token in destructive) {
+                val at = source.indexOf(token)
+                if (at >= 0 && at < gate) failures += "${file.name} $token precedes the package gate"
+            }
+        }
+        assertEquals(emptyList<String>(), failures)
+        val room = File(
             "src/androidTest/java/com/sentinel/quantum/security/V25RoomIdentityUpgradeInstrumentationTest.kt"
         ).readText()
-        val guard = source.indexOf("REFUSING_TO_TOUCH_INSTALLED_V25_PACKAGE")
-        val deletion = source.indexOf("deleteDatabase(")
-        assertTrue(guard >= 0)
-        assertTrue(deletion > guard)
-        assertTrue(source.contains("com.sentinel.quantum.v1validation"))
-        assertFalse(source.contains("fallbackToDestructiveMigration"))
+        val open = room.indexOf("SQLiteDatabase.openDatabase")
+        val deletion = room.indexOf("deleteDatabase(")
+        val gate = room.indexOf("InstalledDataGuard.assertSafeToRun")
+        assertTrue(gate >= 0 && deletion > gate && open > gate)
+        assertFalse(room.contains("fallbackToDestructiveMigration"))
     }
 
     @Test fun reputationPurgeRemovesCacheEntriesOnly() {
