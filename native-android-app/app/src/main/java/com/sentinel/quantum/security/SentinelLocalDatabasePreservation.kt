@@ -29,6 +29,23 @@ internal object SentinelLocalDatabasePreservation {
         return OpenOutcome(OpenStatus.PRESERVED, rows.toList())
     }
 
+    /**
+     * Decision used by the real Room open. A missing file may be created.
+     * An existing file opens only when its Room identity and user version match V25.
+     * An unreadable file, a different identity, or a destructive request is refused.
+     * Refusal must happen before Room is built, and must not delete the file.
+     */
+    fun allowOpen(
+        filePresent: Boolean,
+        identityHash: String?,
+        userVersion: Int,
+        destructiveFallbackRequested: Boolean = false
+    ): Boolean {
+        if (destructiveFallbackRequested) return false
+        if (!filePresent) return true
+        return identityHash == IDENTITY_HASH && userVersion == SCHEMA_VERSION
+    }
+
     fun assertNonDestructive(destructiveFallbackRequested: Boolean) {
         check(!destructiveFallbackRequested) { "DESTRUCTIVE_MIGRATION_FORBIDDEN" }
     }

@@ -1,6 +1,7 @@
 package com.sentinel.quantum.security
 
 import android.content.Context
+import android.database.sqlite.SQLiteDatabase
 import androidx.room3.Dao
 import androidx.room3.Database
 import androidx.room3.Entity
@@ -50,7 +51,6 @@ class CallFilterLogStore private constructor(
         )
 
         fun get(context: Context): CallFilterLogStore {
-            SentinelLocalDatabasePreservation.assertNonDestructive(false)
             return CallFilterLogStore(
                 SentinelLocalDatabase.get(context.applicationContext).callFilterDecisionDao()
             )
@@ -91,10 +91,51 @@ abstract class SentinelLocalDatabase : RoomDatabase() {
         @Volatile private var instance: SentinelLocalDatabase? = null
 
         fun get(context: Context): SentinelLocalDatabase = instance ?: synchronized(this) {
-            instance ?: Room.databaseBuilder<SentinelLocalDatabase>(
-                context.applicationContext,
-                "sentinel-local.db"
-            ).setDriver(AndroidSQLiteDriver()).build().also { instance = it }
+            instance ?: openPreserving(context.applicationContext).also { instance = it }
         }
+
+        private fun openPreserving(context: Context): SentinelLocalDatabase {
+            val file = context.getDatabasePath("sentinel-local.db")
+            val present = file.isFile
+            val probed = if (present) RoomMasterIdentity.read(file) else null
+            val allowed = SentinelLocalDatabasePreservation.allowOpen(
+                filePresent = present,
+                identityHash = probed?.identityHash,
+                userVersion = probed?.userVersion ?: -1,
+                destructiveFallbackRequested = false
+            )
+            SentinelLocalDatabasePreservation.assertNonDestructive(!allowed)
+            return Room.databaseBuilder<SentinelLocalDatabase>(
+                context,
+                "sentinel-local.db"
+            ).setDriver(AndroidSQLiteDriver()).build()
+        }
+    }
+}
+
+/**
+ * Read-only view of an existing Room file. A failed read returns null so the open
+ * is refused. This object never writes, checkpoints, or removes the file.
+ */
+internal object RoomMasterIdentity {
+    data class Probe(val identityHash: String?, val userVersion: Int)
+
+    fun read(file: java.io.File): Probe? {
+        if (!file.isFile) return null
+        return runCatching {
+            SQLiteDatabase.openDatabase(
+                file.absolutePath,
+                null,
+                SQLiteDatabase.OPEN_READONLY
+            ).use { database ->
+                val identity = database.rawQuery(
+                    "SELECT identity_hash FROM room_master_table WHERE id = 42",
+                    null
+                ).use { cursor ->
+                    if (!cursor.moveToFirst()) null else cursor.getString(0)
+                }
+                Probe(identity, database.version)
+            }
+        }.getOrNull()
     }
 }

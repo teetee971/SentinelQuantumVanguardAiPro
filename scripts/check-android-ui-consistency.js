@@ -782,13 +782,13 @@ if (smsComposeSource) {
     'text = { Text("Conversations") }',
     'text = { Text("Écrire") }',
     'label = { Text(stringResource(R.string.phone_core_reply)) }',
-    'submitSms(replyAddress, draft)',
+    'submitSms(replyAddress, draft, threadId)',
     'LiveRegionMode.Polite',
     'activationSnapshot.state != SmsActivationDiagnostics.State.READY',
     'activeProviderMessageId',
     'LaunchedEffect(activeSendToken, activeProviderMessageId)',
     'event.providerMessageId != activeProviderMessageId',
-    'activeProviderMessageId = result.providerMessageId',
+    'activeProviderMessageId = receipt.providerMessageId',
   ]) {
     if (!smsComposeSource.includes(marker)) {
       errors.push(`conversation-first SMS marker missing (${marker}): ${smsComposePath}`);

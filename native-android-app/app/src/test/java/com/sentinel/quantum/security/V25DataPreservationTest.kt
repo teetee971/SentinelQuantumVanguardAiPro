@@ -71,7 +71,52 @@ class V25DataPreservationTest {
         val source = File("src/main/java/com/sentinel/quantum/security/CallFilterLogStore.kt").readText()
         assertFalse(source.contains("fallbackToDestructiveMigration"))
         assertFalse(source.contains("deleteDatabase"))
-        assertTrue(source.contains("assertNonDestructive(false)"))
+        assertFalse(source.contains("assertNonDestructive(false)"))
+        assertTrue(source.contains("RoomMasterIdentity.read"))
+        assertTrue(source.contains("SQLiteDatabase.OPEN_READONLY"))
+        assertTrue(source.contains("SentinelLocalDatabasePreservation.allowOpen("))
+        assertTrue(source.contains("assertNonDestructive(!allowed)"))
+    }
+
+    @Test fun absentRoomFileMayBeCreated() {
+        assertTrue(
+            SentinelLocalDatabasePreservation.allowOpen(
+                filePresent = false,
+                identityHash = null,
+                userVersion = -1
+            )
+        )
+    }
+
+    @Test fun matchingV25IdentityMayOpen() {
+        assertTrue(
+            SentinelLocalDatabasePreservation.allowOpen(
+                filePresent = true,
+                identityHash = SentinelLocalDatabasePreservation.IDENTITY_HASH,
+                userVersion = SentinelLocalDatabasePreservation.SCHEMA_VERSION
+            )
+        )
+    }
+
+    @Test fun unreadableExistingFileIsRefused() {
+        assertFalse(
+            SentinelLocalDatabasePreservation.allowOpen(
+                filePresent = true,
+                identityHash = null,
+                userVersion = -1
+            )
+        )
+    }
+
+    @Test fun mismatchedIdentityIsRefusedWithoutADestructiveFlag() {
+        assertFalse(
+            SentinelLocalDatabasePreservation.allowOpen(
+                filePresent = true,
+                identityHash = "00000000000000000000000000000000",
+                userVersion = 1,
+                destructiveFallbackRequested = false
+            )
+        )
     }
 
     @Test fun reputationPurgeRemovesCacheEntriesOnly() {
