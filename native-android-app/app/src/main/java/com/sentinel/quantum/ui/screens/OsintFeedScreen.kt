@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.R
+import com.sentinel.quantum.background.OsintFeedDiff
 import com.sentinel.quantum.data.OsintFeedCache
 import com.sentinel.quantum.data.OsintFeedItem
 import com.sentinel.quantum.data.OsintPublicationTime
@@ -136,7 +137,10 @@ fun OsintFeedScreen(navController: NavController) {
     LaunchedEffect(Unit) {
         val cached = withContext(Dispatchers.IO) { repository.loadCached() }
         if (cached != null) {
-            feedItems = cached.items
+            val allowed = OsintRssConfig.fetchSources(SettingsStore(context).osintRssSourceNames())
+                .map { it.displayName }
+                .toSet()
+            feedItems = OsintFeedDiff.retainSources(cached.items, allowed)
             cachedAtMs = cached.fetchedAtMs
             displayedSnapshot = OsintDisplayedSnapshot.COMPLETE
             OsintTransientItemStore.clear()
