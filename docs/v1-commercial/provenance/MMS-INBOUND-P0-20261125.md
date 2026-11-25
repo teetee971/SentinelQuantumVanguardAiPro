@@ -14,6 +14,10 @@ Référence précédente : `3da5f9ab22a0b7407591e61857ee1f0869832eab`.
 - Le WAP direct passe par cette épingle avant la projection. Le redémarrage rejoue les entrées qui ont encore un abonnement. Une quarantaine retire l'abonnement et garde le fichier.
 - `confirmDurableCopy` libère l'épingle mémoire si la relecture échoue.
 
+## Suite du même jour
+
+L'épingle `retention-v1` est remplacée en trois noms (`tmp`, fichier vivant, `.bak`) sans `java.nio.file`, donc compatible `minSdk` 24. Si le nouveau nom n'est pas pris, l'ancien est remis. Une lecture restaure le `.bak` si le fichier vivant manque. Un `retain` sans abonnement ne retire pas un abonnement déjà écrit. `deleteInternal` refuse d'unlink un staging non vide tant qu'une copie privée de même empreinte n'a pas été relue, sauf échec de transport déjà journalisé.
+
 ## Non qualifié
 
 Pas de suite instrumentée. Pas de téléphone. L'horloge, le provider Android et la pression cache ne sont pas prouvés sur un S24+.

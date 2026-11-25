@@ -293,6 +293,38 @@ class MmsDownloadDurabilityTest {
         )
     }
 
+    @Test
+    fun nonemptyStagingIsNotUnlinkedWithoutAPrivateCopyOrATransportFailure() {
+        assertFalse(
+            MmsStagingDeletion.allowed(
+                stagingBytesPresent = true,
+                transportFailed = false,
+                privateCopyMatches = false
+            )
+        )
+        assertTrue(
+            MmsStagingDeletion.allowed(
+                stagingBytesPresent = true,
+                transportFailed = true,
+                privateCopyMatches = false
+            )
+        )
+        assertTrue(
+            MmsStagingDeletion.allowed(
+                stagingBytesPresent = true,
+                transportFailed = false,
+                privateCopyMatches = true
+            )
+        )
+        assertTrue(
+            MmsStagingDeletion.allowed(
+                stagingBytesPresent = false,
+                transportFailed = false,
+                privateCopyMatches = false
+            )
+        )
+    }
+
     private fun snapshot(
         subscriptionId: Int = 1,
         requestedAtMs: Long = 10L,

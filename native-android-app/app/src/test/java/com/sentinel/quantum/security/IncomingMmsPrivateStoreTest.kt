@@ -176,6 +176,35 @@ class IncomingMmsPrivateStoreTest {
         assertEquals(IncomingMmsPrivateStore.MAX_STORED_MMS, pduFiles(root).size)
     }
 
+    @Test
+    fun aLaterRetainKeepsThePendingSubscriptionAndTheOtherPins() = withTempRoot { root ->
+        val first = requireNotNull(IncomingMmsIdentity.sha256Hex("pin".toByteArray(Charsets.UTF_8)))
+        val second = requireNotNull(IncomingMmsIdentity.sha256Hex("other".toByteArray(Charsets.UTF_8)))
+        assertTrue(IncomingMmsPrivateRetention.retain(root, first, 7))
+        assertTrue(IncomingMmsPrivateRetention.retain(root, first, null))
+        assertEquals(7, IncomingMmsPrivateRetention.read(root).single().subscriptionId)
+        assertTrue(IncomingMmsPrivateRetention.retain(root, second, 3))
+        assertTrue(IncomingMmsPrivateRetention.retain(root, first, 9))
+        val entries = IncomingMmsPrivateRetention.read(root).associate { it.digest to it.subscriptionId }
+        assertEquals(9, entries[first])
+        assertEquals(3, entries[second])
+        assertFalse(
+            File("src/main/java/com/sentinel/quantum/security/IncomingMmsPrivateRetention.kt")
+                .readText()
+                .contains("target.delete()")
+        )
+    }
+
+    @Test
+    fun aMissingLedgerIsRestoredFromTheBackupName() = withTempRoot { root ->
+        val digest = requireNotNull(IncomingMmsIdentity.sha256Hex("bak".toByteArray(Charsets.UTF_8)))
+        val inbox = File(root, "mms-inbox").apply { mkdirs() }
+        File(inbox, "retention-v1.bak").writeText(digest)
+        assertEquals(digest, IncomingMmsPrivateRetention.read(root).single().digest)
+        assertTrue(File(inbox, "retention-v1").isFile)
+        assertFalse(File(inbox, "retention-v1.bak").isFile)
+    }
+
     private fun pduFiles(root: File): List<File> =
         File(root, "mms-inbox").listFiles()
             ?.filter { it.isFile && it.extension == "pdu" }

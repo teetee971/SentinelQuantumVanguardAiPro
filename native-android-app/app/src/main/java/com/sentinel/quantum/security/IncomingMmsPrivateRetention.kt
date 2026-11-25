@@ -19,9 +19,13 @@ internal object IncomingMmsPrivateRetention {
     fun retain(filesDir: File, digest: String, subscriptionId: Int?): Boolean = synchronized(LOCK) {
         val normalized = digest.lowercase()
         if (IncomingMmsIdentity.persistedFileName(normalized) == null) return@synchronized false
-        val subscription = subscriptionId?.takeIf { it >= 0 }
-        val entries = readUnlocked(filesDir).filterNot { it.digest == normalized } +
-            Entry(normalized, subscription)
+        val current = readUnlocked(filesDir)
+        val previous = current.firstOrNull { it.digest == normalized }?.subscriptionId
+        val subscription = subscriptionId?.takeIf { it >= 0 } ?: previous
+        if (current.any { it.digest == normalized && it.subscriptionId == subscription }) {
+            return@synchronized true
+        }
+        val entries = current.filterNot { it.digest == normalized } + Entry(normalized, subscription)
         write(filesDir, entries)
     }
 
@@ -43,9 +47,14 @@ internal object IncomingMmsPrivateRetention {
     }
 
     private fun readUnlocked(filesDir: File): List<Entry> {
-        val file = ledgerFile(filesDir) ?: return emptyList()
-        if (!file.isFile) return emptyList()
-        return runCatching { file.readText() }.getOrNull()
+        val directory = inbox(filesDir) ?: return emptyList()
+        val main = File(directory, FILE_NAME)
+        val backup = File(directory, BACKUP_NAME)
+        if (!main.isFile && backup.isFile) {
+            runCatching { backup.renameTo(main) }
+        }
+        if (!main.isFile) return emptyList()
+        return runCatching { main.readText() }.getOrNull()
             .orEmpty()
             .lineSequence()
             .mapNotNull(::parse)
@@ -56,27 +65,44 @@ internal object IncomingMmsPrivateRetention {
     private fun write(filesDir: File, entries: List<Entry>): Boolean {
         val directory = inbox(filesDir) ?: return false
         val target = File(directory, FILE_NAME)
-        val temporary = File(directory, "$FILE_NAME.tmp")
+        val temporary = File(directory, "$FILE_NAME.${java.util.UUID.randomUUID()}.tmp")
+        val backup = File(directory, BACKUP_NAME)
         val payload = entries.joinToString(separator = "\n") { entry ->
             entry.subscriptionId?.let { "${entry.digest} $it" } ?: entry.digest
         }
-        val written = runCatching {
+        val streamed = runCatching {
             FileOutputStream(temporary).use { stream ->
                 stream.write(payload.toByteArray(Charsets.US_ASCII))
                 stream.fd.sync()
             }
-            if (target.exists() && !target.delete()) return@runCatching false
-            temporary.renameTo(target)
+            true
         }.getOrDefault(false)
-        if (!written) runCatching { temporary.delete() }
-        return written && target.isFile
-    }
-
-    private fun ledgerFile(filesDir: File): File? {
-        val directory = inbox(filesDir) ?: return null
-        val file = runCatching { File(directory, FILE_NAME).canonicalFile }.getOrNull() ?: return null
-        if (file.parentFile != directory) return null
-        return file
+        if (!streamed) {
+            runCatching { temporary.delete() }
+            return false
+        }
+        if (!target.exists()) {
+            val created = temporary.renameTo(target)
+            if (!created) runCatching { temporary.delete() }
+            return created && target.isFile
+        }
+        if (backup.exists() && !backup.delete()) {
+            runCatching { temporary.delete() }
+            return false
+        }
+        if (!target.renameTo(backup)) {
+            runCatching { temporary.delete() }
+            return target.isFile
+        }
+        if (!temporary.renameTo(target)) {
+            if (!backup.renameTo(target) && !target.isFile && backup.isFile) {
+                runCatching { backup.renameTo(target) }
+            }
+            runCatching { temporary.delete() }
+            return false
+        }
+        runCatching { backup.delete() }
+        return target.isFile
     }
 
     private fun inbox(filesDir: File): File? {
@@ -101,5 +127,6 @@ internal object IncomingMmsPrivateRetention {
 
     private const val DIRECTORY_NAME = "mms-inbox"
     private const val FILE_NAME = "retention-v1"
+    private const val BACKUP_NAME = "retention-v1.bak"
     private val LOCK = Any()
 }

@@ -180,7 +180,14 @@ internal object MmsStagingStability {
     }
 }
 
-/** Undecodable rows and diagnosed or already-failed rows must not block a new download. */
+/** A non-empty staging file is the only copy until a matching private PDU or a recorded transport failure exists. */
+internal object MmsStagingDeletion {
+    fun allowed(
+        stagingBytesPresent: Boolean,
+        transportFailed: Boolean,
+        privateCopyMatches: Boolean
+    ): Boolean = !stagingBytesPresent || transportFailed || privateCopyMatches
+}
 internal object MmsDownloadJournalAdmission {
     fun countsTowardCap(
         decodable: Boolean,
