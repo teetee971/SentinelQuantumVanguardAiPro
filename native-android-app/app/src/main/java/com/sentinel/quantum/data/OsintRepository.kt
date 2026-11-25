@@ -55,14 +55,19 @@ class OsintRepository(private val cache: OsintFeedCache? = null) {
             val nowMs = System.currentTimeMillis()
             val requestUrl = OsintPublicSources.requestUrl(source, nowMs)
                 ?: return@withContext SourceFetch(false, emptyList())
-            val accept = if (source.kind == OsintSourceKind.NVD_RECENT) {
-                "application/json"
-            } else {
+            val accept = if (source.kind == OsintSourceKind.RSS) {
                 "application/rss+xml, application/atom+xml, application/xml, text/xml"
+            } else {
+                "application/json"
             }
             val bytes = getBytes(requestUrl, accept) ?: return@withContext SourceFetch(false, emptyList())
             if (source.kind == OsintSourceKind.RSS) {
                 return@withContext SourceFetch(true, parseRss(bytes, source))
+            }
+            if (source.kind == OsintSourceKind.CISA_KEV) {
+                val items = OsintPublicSources.parseKev(bytes.toString(Charsets.UTF_8), source.displayName)
+                    ?: return@withContext SourceFetch(false, emptyList())
+                return@withContext SourceFetch(true, items)
             }
             val first = OsintPublicSources.parseNvd(bytes.toString(Charsets.UTF_8), source.displayName)
                 ?: return@withContext SourceFetch(false, emptyList())

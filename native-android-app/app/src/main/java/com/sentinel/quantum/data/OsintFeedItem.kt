@@ -15,7 +15,7 @@ data class OsintFeedItem(
         get() = if (link.isNotBlank()) link else "$source|$title|${pubDate.time}"
 }
 
-enum class OsintSourceKind { RSS, NVD_RECENT }
+enum class OsintSourceKind { RSS, NVD_RECENT, CISA_KEV }
 
 /**
  * Closed allowlist. Each URL is an official public feed that answered HTTPS 200
@@ -39,5 +39,10 @@ enum class OsintSource(
         "NVD CVE",
         "https://services.nvd.nist.gov/rest/json/cves/2.0",
         OsintSourceKind.NVD_RECENT
+    ),
+    CISA_KEV(
+        "CISA KEV",
+        "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json",
+        OsintSourceKind.CISA_KEV
     )
 }

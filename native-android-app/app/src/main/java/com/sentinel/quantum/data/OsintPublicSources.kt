@@ -20,10 +20,10 @@ internal object OsintPublicSources {
         if (!source.url.startsWith("https://") || source.url.contains('?') || source.url.contains('@')) {
             return null
         }
-        if (source.kind == OsintSourceKind.RSS) return source.url
+        if (source.kind != OsintSourceKind.NVD_RECENT) return source.url
         if (nowMs < NVD_WINDOW_MS || startIndex < 0 || startIndex > NVD_MAX_TOTAL) return null
-        val start = formatUtc(nowMs - NVD_WINDOW_MS)
-        val end = formatUtc(nowMs)
+        val start = formatUtc(nowMs - NVD_WINDOW_MS).replace(":", "%3A")
+        val end = formatUtc(nowMs).replace(":", "%3A")
         return source.url +
             "?resultsPerPage=$NVD_PAGE_SIZE" +
             "&startIndex=$startIndex" +
@@ -62,6 +62,30 @@ internal object OsintPublicSources {
         return NvdPage(total, items)
     }
 
+    /** Keeps the newest catalog rows only. The full file is not stored as feed items. */
+    fun parseKev(body: String, sourceName: String): List<OsintFeedItem>? {
+        val root = runCatching { JSONObject(body) }.getOrNull() ?: return null
+        val array = root.optJSONArray("vulnerabilities") ?: return null
+        val parsed = mutableListOf<OsintFeedItem>()
+        for (index in 0 until array.length()) {
+            val entry = array.optJSONObject(index) ?: continue
+            val id = entry.optString("cveID")
+            if (!CVE_ID.matches(id)) continue
+            val name = entry.optString("vulnerabilityName").trim()
+            val summary = entry.optString("shortDescription").trim()
+            parsed += OsintFeedItem(
+                title = if (name.isEmpty()) id else "$id — $name".take(180),
+                description = summary.take(MAX_DESCRIPTION_CHARS),
+                link = "https://nvd.nist.gov/vuln/detail/$id",
+                source = sourceName,
+                pubDate = parseTime(entry.optString("dateAdded")),
+                category = "KEV"
+            )
+        }
+        if (parsed.isEmpty()) return null
+        return parsed.sortedByDescending { it.pubDate.time }.take(NVD_PAGE_SIZE)
+    }
+
     private fun description(cve: JSONObject): String {
         val values = cve.optJSONArray("descriptions") ?: return ""
         var french = ""
@@ -81,7 +105,11 @@ internal object OsintPublicSources {
     }
 
     private fun parseTime(value: String): Date {
-        val patterns = listOf("yyyy-MM-dd'T'HH:mm:ss.SSS", "yyyy-MM-dd'T'HH:mm:ss")
+        val patterns = listOf(
+            "yyyy-MM-dd'T'HH:mm:ss.SSS",
+            "yyyy-MM-dd'T'HH:mm:ss",
+            "yyyy-MM-dd"
+        )
         for (pattern in patterns) {
             val parsed = runCatching {
                 SimpleDateFormat(pattern, Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") }.parse(value)
