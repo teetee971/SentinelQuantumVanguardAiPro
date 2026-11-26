@@ -30,6 +30,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.security.BluetoothDeviceKind
@@ -48,6 +49,7 @@ import com.sentinel.quantum.security.JoinedHost
 import com.sentinel.quantum.security.JoinedLanAnnouncement
 import com.sentinel.quantum.security.JoinedLanDiscovery
 import com.sentinel.quantum.security.JoinedLanDiscoveryUpdate
+import com.sentinel.quantum.security.JoinedLanServiceCatalog
 import com.sentinel.quantum.security.JoinedLanSighting
 import com.sentinel.quantum.security.JoinedLanSightingMemory
 import com.sentinel.quantum.security.NetworkServiceExposureAnalyzer
@@ -60,6 +62,7 @@ import com.sentinel.quantum.security.NetworkTimelineStore
 import com.sentinel.quantum.security.NetworkTrustStore
 import com.sentinel.quantum.security.WifiConnect
 import com.sentinel.quantum.security.WifiConnectPlan
+import com.sentinel.quantum.security.WifiBand
 import com.sentinel.quantum.security.WifiIntrusionFinding
 import com.sentinel.quantum.security.WifiIntrusionHints
 import com.sentinel.quantum.security.WifiRiskEvaluator
@@ -108,6 +111,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     var wifiNetworks by remember { mutableStateOf<List<DiscoveredWifiNetwork>>(emptyList()) }
     val lanDiscovery = remember(context) { JoinedLanDiscovery(context) }
     var joinedLink by remember { mutableStateOf<WifiJoinedLink?>(null) }
+    var lanRunning by remember { mutableStateOf(false) }
     var gatewayNote by remember { mutableStateOf<String?>(null) }
     var dnsNote by remember { mutableStateOf<String?>(null) }
     var accessPointNote by remember { mutableStateOf<String?>(null) }

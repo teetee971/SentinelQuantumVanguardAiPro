@@ -35,11 +35,13 @@ class TrackerRepeatMemory(context: Context) {
     private val preferences = context.applicationContext.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
 
     fun read(identity: String): TrackerRepeatState = synchronized(LOCK) {
-        parse(preferences.getString(KEY, null)).entries[identity] ?: TrackerRepeatState(0, 0)
+        parse(preferences.getString(KEY, null)).entries[identity]
+            ?.let { TrackerRepeatState(it.sightings, it.placeKeys.size) }
+            ?: TrackerRepeatState(0, 0)
     }
 
     fun record(identity: String, place: String?): TrackerRepeatState = synchronized(LOCK) {
-        if (!hex(identity) || (place != null && !hex(place))) return TrackerRepeatState(0, 0)
+        if (!hex(identity) || (place != null && !hex(place))) return@synchronized TrackerRepeatState(0, 0)
         val entries = parse(preferences.getString(KEY, null)).entries.toMutableMap()
         val previous = entries[identity]
         val places = previous?.placeKeys.orEmpty().toMutableSet()

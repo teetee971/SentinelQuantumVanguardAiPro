@@ -134,7 +134,7 @@ class BluetoothScanner(context: Context) {
                 val firstSighting = sessionKey !in discovered
                 discovered[sessionKey] = mapped
                 if (firstSighting) {
-                    armQuiet(scanCallback, onResults, onScanFinished, onTimelineUpdated)
+                    armQuiet(this, onResults, onScanFinished, onTimelineUpdated)
                 }
                 onResults(sortedResults())
             }

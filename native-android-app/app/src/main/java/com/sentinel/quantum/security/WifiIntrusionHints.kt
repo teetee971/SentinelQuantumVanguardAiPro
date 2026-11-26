@@ -17,7 +17,7 @@ object WifiIntrusionHints {
             if (distinct.size < 2) return@forEach
             val strong = distinct.filter { it.assessment.securityType in STRONG }
             val weak = distinct.filter { it.assessment.securityType in WEAK }
-            if (strong.isEmpty() || weak.isEmpty()) return@forEach
+            if (strong.isNotEmpty() && weak.isNotEmpty()) {
             val name = distinct.first().ssid
             val joinedToWeak = joined != null &&
                 joined.ssid.trim().equals(name, ignoreCase = true) &&
@@ -32,6 +32,7 @@ object WifiIntrusionHints {
                     NetworkRiskLevel.MEDIUM,
                     "Le nom « $name » est annoncé à la fois chiffré et en ouvert ou en WEP. Cela peut être une copie. Ce n’est pas une intrusion constatée."
                 )
+            }
             }
             val enterprise = distinct.filter { it.assessment.securityType == WifiSecurityType.WPA2_ENTERPRISE }
             val personal = distinct.filter { it.assessment.securityType in PERSONAL }

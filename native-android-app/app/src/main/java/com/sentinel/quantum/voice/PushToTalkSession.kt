@@ -61,7 +61,7 @@ class PushToTalkSession(
     suspend fun close(): Result<Unit> = mutex.withLock {
         if (state == State.CLOSED) return Result.success(Unit)
 
-        val muteResult = if (state == State.TRANSMITTING) {
+        val muteResult = if (state == State.TRANSMITTING || state == State.FAILED) {
             microphoneGate(false)
         } else {
             Result.success(Unit)

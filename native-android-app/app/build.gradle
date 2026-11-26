@@ -55,6 +55,8 @@ android {
             matchingFallbacks = ['release']
         }
         debug {
+            applicationIdSuffix ".p0validation"
+            versionNameSuffix "-p0validation"
             minifyEnabled false
         }
     }

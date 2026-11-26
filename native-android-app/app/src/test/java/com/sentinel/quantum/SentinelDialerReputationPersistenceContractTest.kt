@@ -12,6 +12,8 @@ class SentinelDialerReputationPersistenceContractTest {
 
         assertTrue(source.contains("CommunicationReputationWriter"))
         assertTrue(source.contains("SharedPreferencesCommunicationReputationStorage(applicationContext)"))
+        assertTrue(source.contains("settings.acceptCallerReputationResult("))
         assertTrue(source.contains(".persist(lookupNumber, r"))
+        assertTrue(source.contains("if (accepted == null)"))
     }
 }

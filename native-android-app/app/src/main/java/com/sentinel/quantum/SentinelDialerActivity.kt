@@ -780,13 +780,23 @@ class SentinelDialerActivity : ComponentActivity() {
                                         privacyMode = PhonePrivacyFirewall.Mode.ENHANCED,
                                         explicitConsent = settings.callerReputationEnrichmentEnabled
                                     )
-                                    CommunicationReputationWriter(
-                                        CommunicationReputationCache(
-                                            SharedPreferencesCommunicationReputationStorage(applicationContext)
-                                        )
-                                    ).persist(lookupNumber, r)
-                                    "Réputation Sentinel : risque ${r.riskScore}/100 · ${r.action}" +
-                                        if (r.flags.isNotEmpty()) " · " + r.flags.take(3).joinToString(", ") else ""
+                                    val accepted = settings.acceptCallerReputationResult(
+                                        result = r,
+                                        persist = {
+                                            CommunicationReputationWriter(
+                                                CommunicationReputationCache(
+                                                    SharedPreferencesCommunicationReputationStorage(applicationContext)
+                                                )
+                                            ).persist(lookupNumber, r)
+                                        },
+                                        publish = {}
+                                    )
+                                    if (accepted == null) {
+                                        "Réputation Sentinel temporairement indisponible"
+                                    } else {
+                                        "Réputation Sentinel : risque ${accepted.riskScore}/100 · ${accepted.action}" +
+                                            if (accepted.flags.isNotEmpty()) " · " + accepted.flags.take(3).joinToString(", ") else ""
+                                    }
                                 }.getOrElse { "Réputation Sentinel temporairement indisponible" }
                             }
                         }
